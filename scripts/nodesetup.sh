@@ -200,11 +200,15 @@ apt_install_kube() {
     info "Update the apt package index and install packages needed to use the Kubernetes apt repository"
     apt install -y apt-transport-https ca-certificates socat conntrack
 
-    info "Download the Google Cloud public signing key"
-    curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
-
+    info "Download the Google Cloud public signing key"    
+    #curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    # fix https://github.com/kubernetes/website/issues/41334
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+    
     info "Add the Kubernetes apt repository"
-    echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
+    #echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
+    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
     info "Download and install kubernetes components"
     local VERSION
