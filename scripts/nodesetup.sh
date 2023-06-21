@@ -32,9 +32,11 @@ helper() {
     echo "  KUBERNETES_VERSION: Version of kubernetes to install. Default is '1.26.X'"
     echo "  CRICTL_VERSION: Version of crictl to install. Default is 'v1.26.0'"
     echo "  KUBEADM_CONFIG: Path to the kubeadm config file to use. Default is not set."
-    echo "  KUBEADM_ADVERTISE_ADDRESS: Address to advertise for the node. Default is '0.0.0.0'"
-    echo "  JOIN_TOKEN: Token to join the control-plane, node will not join if not passed. Default is 'abcdef.1234567890abcdef'"
-    echo "  JOIN_TOKEN_CACERT_HASH: Token Certificate Authority hash to join the control-plane, node will not join if not passed. Default is not set."
+    echo "  KUBEADM_ADVERTISE_ADDRESS: Address to advertise for the api-server. Default is '0.0.0.0'"
+    echo "  KUBEADM_BIND_PORT: Port to use for the api-server. Default is '6443'"
+    echo "  JOIN_TOKEN: Token to join the control-plane. Default is 'abcdef.1234567890abcdef'"
+    echo "  JOIN_TOKEN_CACERT_HASH: Token Certificate Authority hash to join the control-plane. Default is not set."
+    echo "  JOIN_CERT_KEY_HASH: Token Certificate Key hash to join the control-plane, cp node will not join if not passed. Default is '78102ac003f419c81bd4e1b23870227b1d98300b8fcc50e859ede1203d8fb2ed'"
     echo "  JOIN_URL: URL to join the control-plane, node will not join if not passed. Default is not set."
     echo "  DEBUG: Set to 1 for more verbosity during script execution. Default is 0."
     echo ""
@@ -92,10 +94,22 @@ setup_env() {
         JOIN_TOKEN="abcdef.1234567890abcdef"
     fi
 
-    # use a predefined kubeadm KUBEADM_ADVERTISE_ADDRESS if not passed
+    # use a predefined certificate key hash if not passed
+    if [ -z "${JOIN_CERT_KEY_HASH}" ]; then
+        warn "The join certificate key has not been passed, a predefined hash will be used"
+        JOIN_CERT_KEY_HASH="78102ac003f419c81bd4e1b23870227b1d98300b8fcc50e859ede1203d8fb2ed"
+    fi
+
+    # use a predefined KUBEADM_ADVERTISE_ADDRESS if not passed
     if [ -z "${KUBEADM_ADVERTISE_ADDRESS}" ]; then
-        warn "The advertise address has not been passed, a predefined address will be used"
+        warn "The advertise address has not been passed, a predefined value will be used"
         KUBEADM_ADVERTISE_ADDRESS="0.0.0.0"
+    fi
+
+    # use a predefined KUBEADM_BIND_PORT if not passed
+    if [ -z "${KUBEADM_BIND_PORT}" ]; then
+        warn "The bind port has not been passed, a predefined value will be used"
+        KUBEADM_BIND_PORT="6443"
     fi
 }
 
@@ -165,6 +179,7 @@ install_containerd() {
     mkdir -p /etc/containerd
     containerd config default | sed -e "s#SystemdCgroup = false#SystemdCgroup = true#g" | tee /etc/containerd/config.toml
 
+    sed -i '/\[Service\]/a EnvironmentFile='/etc/environment'' /usr/local/lib/systemd/system/containerd.service
     systemctl daemon-reload
     systemctl enable --now containerd
     systemctl restart containerd
@@ -191,8 +206,10 @@ apt_install_containerd() {
     apt install -y containerd
     mkdir -p /etc/containerd
     containerd config default | sed -e "s#SystemdCgroup = false#SystemdCgroup = true#g" | tee /etc/containerd/config.toml
+    sed -i '/\[Service\]/a EnvironmentFile='/etc/environment'' /usr/local/lib/systemd/system/containerd.service
+    systemctl daemon-reload
+    systemctl enable --now containerd
     systemctl restart containerd
-    systemctl enable containerd
     apt-mark hold containerd
 }
 
@@ -200,12 +217,12 @@ apt_install_kube() {
     info "Update the apt package index and install packages needed to use the Kubernetes apt repository"
     apt install -y apt-transport-https ca-certificates socat conntrack
 
-    info "Download the Google Cloud public signing key"    
+    info "Download the Google Cloud public signing key"
     #curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
     # fix https://github.com/kubernetes/website/issues/41334
     mkdir -p /etc/apt/keyrings
     curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-    
+
     info "Add the Kubernetes apt repository"
     #echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
     echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
@@ -249,7 +266,7 @@ init_cluster() {
     fi
 
     info "Initializing the control-plane"
-    local KUBEADM_ARGS="--token ${JOIN_TOKEN} --control-plane-endpoint ${JOIN_URL} --apiserver-advertise-address ${KUBEADM_ADVERTISE_ADDRESS} --upload-certs"
+    local KUBEADM_ARGS="--token ${JOIN_TOKEN} --certificate-key ${JOIN_CERT_KEY_HASH} --control-plane-endpoint ${JOIN_URL} --apiserver-advertise-address ${KUBEADM_ADVERTISE_ADDRESS} --apiserver-bind-port ${KUBEADM_BIND_PORT} --upload-certs"
     if [ -f "${KUBEADM_CONFIG}" ]; then
         KUBEADM_ARGS="--config ${KUBEADM_CONFIG}"
     fi
@@ -274,7 +291,7 @@ join_node() {
     fi
 
     if [ "${IS_CONTROLPLANE}" ]; then
-        KUBEADM_ARGS="${KUBEADM_ARGS} --control-plane"
+        KUBEADM_ARGS="${KUBEADM_ARGS} --control-plane --certificate-key ${JOIN_CERT_KEY_HASH}"
     elif [ -f "${KUBEADM_CONFIG}" ]; then
         KUBEADM_ARGS="--config ${KUBEADM_CONFIG}"
     fi
