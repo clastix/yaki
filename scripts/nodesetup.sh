@@ -418,14 +418,14 @@ do_prepare() {
 
 do_kube_init() {
     # verify if the resolved JOIN_URL is contained inside the VM network interfaces
-    if verify_join_url; then
+    #if verify_join_url; then
         info "Creating k8s cluster"
         init_cluster
-    else
-        info "Joining node as another control-plane for HA"
-        declare -g IS_CONTROLPLANE=true
-        join_node
-    fi
+    #else
+    #    info "Joining node as another control-plane for HA"
+    #    declare -g IS_CONTROLPLANE=true
+    #    join_node
+    #fi
 }
 
 do_kube_join() {
