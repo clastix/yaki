@@ -21,16 +21,19 @@ helper() {
     echo "  INSTALL_METHOD=... KUBERNETES_VERSION=... CRICTL_VERSION=... ./nodesetup.sh <command>"
     echo ""
     echo "Commands:"
-    echo "  prepare: Prepare the node for kubernetes installation (default command)"
+    echo "  setup: Prepare the node for kubernetes (default command)"
     echo "  init: Deploy the first control-plane node of the kubernetes cluster"
     echo "  join: Join the node to the cluster"
     echo "  reset: Reset the node"
     echo "  help: Print this help"
     echo ""
     echo "Environment variables:"
-    echo "  INSTALL_METHOD: The installation method to use: 'apt', 'tar' (TBD), 'rpm', or 'airgap' (TBD). Default is 'apt'"
-    echo "  KUBERNETES_VERSION: Version of kubernetes to install. Default is '1.26.X'"
-    echo "  CRICTL_VERSION: Version of crictl to install. Default is 'v1.26.0'"
+    echo "  INSTALL_METHOD: The installation method to use: 'apt', 'tar', 'rpm' (TBD), or 'airgap' (TBD). Default is 'tar'"
+    echo "  CONTAINERD_VERSION: Version of container runtime containerd. Default is 'v1.7.12'"
+    echo "  RUNC_VERSION: Version of runc to install. Default is 'v1.1.11'"
+    echo "  CNI_VERSION: Version of CNI plugins to install. Default is 'v1.4.0'"
+    echo "  CRICTL_VERSION: Version of crictl to install. Default is 'v1.29.0'"
+    echo "  KUBERNETES_VERSION: Version of kubernetes to install. Default is 'v1.28.0'"
     echo "  KUBEADM_CONFIG: Path to the kubeadm config file to use. Default is not set."
     echo "  KUBEADM_ADVERTISE_ADDRESS: Address to advertise for the node. Default is '0.0.0.0'"
     echo "  JOIN_TOKEN: Token to join the control-plane, node will not join if not passed. Default is 'abcdef.1234567890abcdef'"
@@ -70,20 +73,37 @@ setup_env() {
 
     # use 'apt' install method if available by default
     if [ -z "${INSTALL_METHOD}" ] && command -v apt >/dev/null 2>&1; then
-        INSTALL_METHOD="apt"
+        INSTALL_METHOD="tar"
     fi
 
     # use a tested version of kubernetes if not passed
-    # N.B. don't insert the initial 'v' in the version string (apt/tar compatibility)
     if [ -z "${KUBERNETES_VERSION}" ]; then
         warn "The kubernetes version has not been passed, a tested version will be used"
-        KUBERNETES_VERSION="1.26.4"
+        KUBERNETES_VERSION="v1.28.0"
+    fi
+
+    # use a tested version of containerd if not passed
+    if [ -z "${CONTAINERD_VERSION}" ]; then
+        warn "The containerd version has not been passed, a tested version will be used"
+        CONTAINERD_VERSION="v1.7.12"
+    fi
+
+    # use a tested version of runc if not passed
+    if [ -z "${RUNC_VERSION}" ]; then
+        warn "The runc version has not been passed, a tested version will be used"
+        RUNC_VERSION="v1.1.11"
+    fi
+
+    # use a tested version of CNI plugins if not passed
+    if [ -z "${CNI_VERSION}" ]; then
+        warn "The containerd version has not been passed, a tested version will be used"
+        CNI_VERSION="v1.4.0"
     fi
 
     # use a tested version of crictl if not passed
     if [ -z "${CRICTL_VERSION}" ]; then
         warn "The crictl version has not been passed, a tested version will be used"
-        CRICTL_VERSION="v1.26.0"
+        CRICTL_VERSION="v1.29.0"
     fi
 
     # use a predefined kubeadm TOKEN if not passed
@@ -115,7 +135,7 @@ fatal() {
     exit 1
 }
 
-setup_prerequisites() {
+install_prerequisites() {
     info "Set node prerequisites: "
     info "  - disable swap"
 
@@ -144,24 +164,29 @@ EOF
 }
 
 install_containerd() {
-    info "installing containerd"
-    wget https://github.com/containerd/containerd/releases/download/v1.6.15/containerd-1.6.15-linux-amd64.tar.gz && \
-    	tar Cxzvf /usr/local containerd-1.6.15-linux-amd64.tar.gz
+    info "installing containerd" # ${CONTAINERD_VERSION#?} remove first char from a variable
+    wget -q https://github.com/containerd/containerd/releases/download/${CONTAINERD_VERSION}/containerd-${CONTAINERD_VERSION#?}-linux-${ARCH}.tar.gz && \
+    	tar Cxzvf /usr/local containerd-${CONTAINERD_VERSION#?}-linux-${ARCH}.tar.gz
+    containerd --version
+    rm -f containerd-${CONTAINERD_VERSION#?}-linux-${ARCH}.tar.gz
 
     mkdir -p /usr/local/lib/systemd/system/ && \
-    	wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service && \
+    	wget -q https://raw.githubusercontent.com/containerd/containerd/main/containerd.service && \
     	mv containerd.service /usr/local/lib/systemd/system/
-        rm -f containerd-1.6.15-linux-amd64.tar.gz
 
-    wget https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64 && \
-        chmod 755 runc.amd64 && \
-        mv runc.amd64 "${SBIN_DIR}"/runc
+    info "installing runc"
+    wget -q https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.${ARCH} && \
+        chmod 755 runc.${ARCH} && \
+        mv runc.${ARCH} ${SBIN_DIR}/runc
+    runc --version
 
+    info "installing CNI plugins"
     mkdir -p /opt/cni/bin && \
-    	wget https://github.com/containernetworking/plugins/releases/download/v1.2.0/cni-plugins-linux-amd64-v1.2.0.tgz && \
-    	tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.2.0.tgz
-        rm -f cni-plugins-linux-amd64-v1.2.0.tgz
+    	wget -q https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz && \
+    	tar Cxzvf /opt/cni/bin cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz
+        rm -f cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz
 
+    info "configuring systemd cgroup driver in containers"
     mkdir -p /etc/containerd
     containerd config default | sed -e "s#SystemdCgroup = false#SystemdCgroup = true#g" | tee /etc/containerd/config.toml
 
@@ -196,7 +221,7 @@ apt_install_containerd() {
     apt-mark hold containerd
 }
 
-apt_install_kube() {
+apt_install_kube_binaries() {
     info "Update the apt package index and install packages needed to use the Kubernetes apt repository"
     apt install -y apt-transport-https ca-certificates socat conntrack
 
@@ -221,25 +246,26 @@ apt_install_kube() {
     apt-mark hold kubelet kubeadm kubectl
 }
 
-install_kube() {
-    info "Update the apt package index and install packages needed to use the Kubernetes apt repository"
-    apt install -y apt-transport-https ca-certificates socat conntrack
+install_kube_binaries() {
+    info "installing kubeadm and kubelet"
     
-    wget https://storage.googleapis.com/kubernetes-release/release/v"${KUBERNETES_VERSION}"/bin/linux/"${ARCH}"/{kubeadm,kubelet,kubectl} && \
-        chmod +x {kubeadm,kubelet,kubectl} && \
-        mv {kubeadm,kubelet,kubectl} "${BIN_DIR}"
+    curl -L --remote-name-all https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/{kubeadm,kubelet}
+    chmod +x {kubeadm,kubelet}
+    mv {kubeadm,kubelet} ${BIN_DIR}
+    kubeadm version
+    kubelet --version
 
-    RELEASE_VERSION="v0.4.0"
-    curl -sSL "https://raw.githubusercontent.com/kubernetes/release/"${RELEASE_VERSION}"/cmd/kubepkg/templates/latest/deb/kubelet/lib/systemd/system/kubelet.service" |\
-        sed "s:/usr/bin:${BIN_DIR}:g" |\
-        tee ${SERVICE_DIR}/kubelet.service
-
-    mkdir -p ${SERVICE_DIR}/kubelet.service.d
-    curl -sSL "https://raw.githubusercontent.com/kubernetes/release/"${RELEASE_VERSION}"/cmd/kubepkg/templates/latest/deb/kubeadm/10-kubeadm.conf" |\
-        sed "s:/usr/bin:${BIN_DIR}:g" |\
-        tee ${SERVICE_DIR}/kubelet.service.d/10-kubeadm.conf
+    curl -sSL "https://raw.githubusercontent.com/kubernetes/release/v0.16.2/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${BIN_DIR}:g" | sudo tee /etc/systemd/system/kubelet.service
+    sudo mkdir -p /etc/systemd/system/kubelet.service.d
+    curl -sSL "https://raw.githubusercontent.com/kubernetes/release/v0.16.2/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${BIN_DIR}:g" | sudo tee /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
     
+    systemctl daemon-reload
     systemctl enable --now kubelet
+
+    info "installing kubectl"
+    curl -LO https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubectl
+    install -o root -g root -m 0755 kubectl ${BIN_DIR}/kubectl
+    kubectl version --client
 }
 
 init_cluster() {
@@ -310,13 +336,11 @@ verify_join_url() {
 }
 
 # install container runtime and kubernetes components
-install() {
+install_kube() {
     case ${INSTALL_METHOD} in
     apt)
-        install_crictl
-        #apt_install_containerd
-        install_containerd
-        apt_install_kube "${KUBERNETES_VERSION}"
+        apt_install_containerd
+        apt_install_kube
         ;;
     rpm)
         fatal "currently unsupported install method ${INSTALL_METHOD}"
@@ -324,7 +348,7 @@ install() {
     tar)
         install_crictl
         install_containerd
-        install_kube "${KUBERNETES_VERSION}"
+        install_kube_binaries
         ;;
     airgap)
         fatal "currently unsupported install method ${INSTALL_METHOD}"
@@ -393,10 +417,10 @@ clean_ipvs() {
 
 # commands
 
-do_prepare() {
+do_kube_setup() {
     info "Prepare the machine for kubernetes"
-    setup_prerequisites
-    install
+    install_prerequisites
+    install_kube
 }
 
 do_kube_init() {
@@ -438,8 +462,8 @@ setup_arch
 setup_env
 
 case ${COMMAND} in
-"" | prepare)
-    do_prepare && \
+"" | setup)
+    do_kube_setup && \
     info "setup completed successfully"
     ;;
 init)
