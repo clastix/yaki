@@ -28,11 +28,11 @@ helper() {
     echo "  help: Print this help"
     echo ""
     echo "Environment variables:"
-    echo "  INSTALL_METHOD: The installation method to use: 'apt', 'tar', 'rpm' (TBD), or 'airgap' (TBD). Default is 'apt'"
-    echo "  CONTAINERD_VERSION: Version of container runtime containerd. Default is 'v1.7.12'"
-    echo "  RUNC_VERSION: Version of runc to install. Default is 'v1.1.11'"
-    echo "  CNI_VERSION: Version of CNI plugins to install. Default is 'v1.4.0'"
-    echo "  CRICTL_VERSION: Version of crictl to install. Default is 'v1.29.0'"
+    echo "  INSTALL_METHOD: The installation method to use: 'apt', 'tar', 'rpm' (TBD), or 'airgap' (TBD). Default is 'tar'"
+    echo "  CONTAINERD_VERSION: Version of container runtime containerd. Default is 'v1.7.12' (tar only)"
+    echo "  RUNC_VERSION: Version of runc to install. Default is 'v1.1.11' (tar only)"
+    echo "  CNI_VERSION: Version of CNI plugins to install. Default is 'v1.4.0' (tar only)"
+    echo "  CRICTL_VERSION: Version of crictl to install. Default is 'v1.29.0' (tar only)"
     echo "  KUBERNETES_VERSION: Version of kubernetes to install. Default is 'v1.28.0'"
     echo "  KUBEADM_CONFIG: Path to the kubeadm config file to use. Default is not set."
     echo "  KUBEADM_ADVERTISE_ADDRESS: Address to advertise for the api-server. Default is '0.0.0.0'"
@@ -75,7 +75,7 @@ setup_env() {
 
     # use 'apt' install method if available by default
     if [ -z "${INSTALL_METHOD}" ] && command -v apt >/dev/null 2>&1; then
-        INSTALL_METHOD="apt"
+        INSTALL_METHOD="tar"
     fi
 
     # use a tested version of kubernetes if not passed
