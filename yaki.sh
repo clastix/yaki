@@ -18,7 +18,7 @@ COMMAND=$1
 
 helper() {
     echo "Usage: "
-    echo "  INSTALL_METHOD=... KUBERNETES_VERSION=... CRICTL_VERSION=... ./nodesetup.sh <command>"
+    echo "  INSTALL_METHOD=... KUBERNETES_VERSION=... CRICTL_VERSION=... ./yaki.sh <command>"
     echo ""
     echo "Commands:"
     echo "  setup: Prepare the node for kubernetes (default command)"
