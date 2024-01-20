@@ -28,7 +28,7 @@ helper() {
     echo "  help: Print this help"
     echo ""
     echo "Environment variables:"
-    echo "  INSTALL_METHOD: The installation method to use: 'apt', 'tar', 'rpm' (TBD), or 'airgap' (TBD). Default is 'tar'"
+    echo "  INSTALL_METHOD: The installation method to use: 'apt', 'tar', 'rpm' (TBD), or 'airgap' (TBD). Default is 'apt'"
     echo "  CONTAINERD_VERSION: Version of container runtime containerd. Default is 'v1.7.12'"
     echo "  RUNC_VERSION: Version of runc to install. Default is 'v1.1.11'"
     echo "  CNI_VERSION: Version of CNI plugins to install. Default is 'v1.4.0'"
