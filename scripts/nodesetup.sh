@@ -75,7 +75,7 @@ setup_env() {
 
     # use 'apt' install method if available by default
     if [ -z "${INSTALL_METHOD}" ] && command -v apt >/dev/null 2>&1; then
-        INSTALL_METHOD="tar"
+        INSTALL_METHOD="apt"
     fi
 
     # use a tested version of kubernetes if not passed
@@ -240,22 +240,20 @@ apt_install_containerd() {
 
 apt_install_kube_binaries() {
     info "Update the apt package index and install packages needed to use the Kubernetes apt repository"
-    apt install -y apt-transport-https ca-certificates socat conntrack
+    apt install -y apt-transport-https ca-certificates curl gpg
 
-    info "Download the Google Cloud public signing key"
-    #curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    # fix https://github.com/kubernetes/website/issues/41334
-    mkdir -p /etc/apt/keyrings
-    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-
-    info "Add the Kubernetes apt repository"
-    #echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
-    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    info "Download the public signing key for the Kubernetes package repositories"
+    
+    # If the folder `/etc/apt/keyrings` does not exist, it should be created before the curl command.
+    mkdir -p -m 755 /etc/apt/keyrings
+    # https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/${KUBERNETES_VERSION%??}/deb/Release.key | gpg --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/'${KUBERNETES_VERSION%??}'/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
     info "Download and install kubernetes components"
     local VERSION
-    if [ -n "${KUBERNETES_VERSION}" ]; then
-        VERSION="=${KUBERNETES_VERSION}-00"
+    if [ -n "${KUBERNETES_VERSION}" ]; then # remove first char from environment variable
+        VERSION="=${KUBERNETES_VERSION#?}-*"
     fi
 
     apt update
@@ -356,8 +354,9 @@ verify_join_url() {
 install_kube() {
     case ${INSTALL_METHOD} in
     apt)
+	install_crictl
         apt_install_containerd
-        apt_install_kube
+        apt_install_kube_binaries
         ;;
     rpm)
         fatal "currently unsupported install method ${INSTALL_METHOD}"
