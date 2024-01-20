@@ -29,10 +29,10 @@ helper() {
     echo ""
     echo "Environment variables:"
     echo "  INSTALL_METHOD: The installation method to use: 'apt', 'tar', 'rpm' (TBD), or 'airgap' (TBD). Default is 'tar'"
-    echo "  CONTAINERD_VERSION: Version of container runtime containerd. Default is 'v1.7.12'"
-    echo "  RUNC_VERSION: Version of runc to install. Default is 'v1.1.11'"
-    echo "  CNI_VERSION: Version of CNI plugins to install. Default is 'v1.4.0'"
-    echo "  CRICTL_VERSION: Version of crictl to install. Default is 'v1.29.0'"
+    echo "  CONTAINERD_VERSION: Version of container runtime containerd. Default is 'v1.7.12' (tar only)"
+    echo "  RUNC_VERSION: Version of runc to install. Default is 'v1.1.11' (tar only)"
+    echo "  CNI_VERSION: Version of CNI plugins to install. Default is 'v1.4.0' (tar only)"
+    echo "  CRICTL_VERSION: Version of crictl to install. Default is 'v1.29.0' (tar only)"
     echo "  KUBERNETES_VERSION: Version of kubernetes to install. Default is 'v1.28.0'"
     echo "  KUBEADM_CONFIG: Path to the kubeadm config file to use. Default is not set."
     echo "  KUBEADM_ADVERTISE_ADDRESS: Address to advertise for the api-server. Default is '0.0.0.0'"
@@ -240,22 +240,20 @@ apt_install_containerd() {
 
 apt_install_kube_binaries() {
     info "Update the apt package index and install packages needed to use the Kubernetes apt repository"
-    apt install -y apt-transport-https ca-certificates socat conntrack
+    apt install -y apt-transport-https ca-certificates curl gpg
 
-    info "Download the Google Cloud public signing key"
-    #curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    # fix https://github.com/kubernetes/website/issues/41334
-    mkdir -p /etc/apt/keyrings
-    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-
-    info "Add the Kubernetes apt repository"
-    #echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
-    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    info "Download the public signing key for the Kubernetes package repositories"
+    
+    # If the folder `/etc/apt/keyrings` does not exist, it should be created before the curl command.
+    mkdir -p -m 755 /etc/apt/keyrings
+    # https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/${KUBERNETES_VERSION%??}/deb/Release.key | gpg --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/'${KUBERNETES_VERSION%??}'/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
     info "Download and install kubernetes components"
     local VERSION
-    if [ -n "${KUBERNETES_VERSION}" ]; then
-        VERSION="=${KUBERNETES_VERSION}-00"
+    if [ -n "${KUBERNETES_VERSION}" ]; then # remove first char from environment variable
+        VERSION="=${KUBERNETES_VERSION#?}-*"
     fi
 
     apt update
@@ -356,8 +354,9 @@ verify_join_url() {
 install_kube() {
     case ${INSTALL_METHOD} in
     apt)
+	install_crictl
         apt_install_containerd
-        apt_install_kube
+        apt_install_kube_binaries
         ;;
     rpm)
         fatal "currently unsupported install method ${INSTALL_METHOD}"
