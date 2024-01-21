@@ -35,12 +35,13 @@ helper() {
     echo "  CRICTL_VERSION: Version of crictl to install. Default is 'v1.29.0' (tar only)"
     echo "  KUBERNETES_VERSION: Version of kubernetes to install. Default is 'v1.28.0'"
     echo "  KUBEADM_CONFIG: Path to the kubeadm config file to use. Default is not set."
-    echo "  KUBEADM_ADVERTISE_ADDRESS: Address to advertise for the api-server. Default is '0.0.0.0'"
-    echo "  KUBEADM_BIND_PORT: Port to use for the api-server. Default is '6443'"
+    echo "  ADVERTISE_ADDRESS: Address to advertise for the api-server. Default is '0.0.0.0'"
+    echo "  BIND_PORT: Port to use for the api-server. Default is '6443'"
     echo "  JOIN_TOKEN: Token to join the control-plane. Default is 'abcdef.1234567890abcdef'"
     echo "  JOIN_TOKEN_CACERT_HASH: Token Certificate Authority hash to join the control-plane. Default is not set."
-    echo "  JOIN_CERT_KEY_HASH: Token Certificate Key hash to join the control-plane, cp node will not join if not passed. Default is '78102ac003f419c81bd4e1b23870227b1d98300b8fcc50e859ede1203d8fb2ed'"
+    echo "  JOIN_TOKEN_CERT_KEY: Token Certificate Key to join the control-plane, cp node will not join if not passed. Default is '78102ac003f419c81bd4e1b23870227b1d98300b8fcc50e859ede1203d8fb2ed'"
     echo "  JOIN_URL: URL to join the control-plane, node will not join if not passed. Default is not set."
+    echo "  JOIN_AS_CP: Switch to join either as control plane or worker. Default is 0."
     echo "  DEBUG: Set to 1 for more verbosity during script execution. Default is 0."
     echo ""
 }
@@ -115,21 +116,21 @@ setup_env() {
     fi
 
     # use a predefined certificate key hash if not passed
-    if [ -z "${JOIN_CERT_KEY_HASH}" ]; then
+    if [ -z "${JOIN_TOKEN_CERT_KEY}" ]; then
         warn "The join certificate key has not been passed, a predefined hash will be used"
-        JOIN_CERT_KEY_HASH="78102ac003f419c81bd4e1b23870227b1d98300b8fcc50e859ede1203d8fb2ed"
+        JOIN_TOKEN_CERT_KEY="78102ac003f419c81bd4e1b23870227b1d98300b8fcc50e859ede1203d8fb2ed"
     fi
 
-    # use a predefined KUBEADM_ADVERTISE_ADDRESS if not passed
-    if [ -z "${KUBEADM_ADVERTISE_ADDRESS}" ]; then
+    # use a predefined ADVERTISE_ADDRESS if not passed
+    if [ -z "${ADVERTISE_ADDRESS}" ]; then
         warn "The advertise address has not been passed, a predefined value will be used"
-        KUBEADM_ADVERTISE_ADDRESS="0.0.0.0"
+        ADVERTISE_ADDRESS="0.0.0.0"
     fi
 
-    # use a predefined KUBEADM_BIND_PORT if not passed
-    if [ -z "${KUBEADM_BIND_PORT}" ]; then
+    # use a predefined BIND_PORT if not passed
+    if [ -z "${BIND_PORT}" ]; then
         warn "The bind port has not been passed, a predefined value will be used"
-        KUBEADM_BIND_PORT="6443"
+        BIND_PORT="6443"
     fi
 }
 
@@ -284,17 +285,12 @@ install_kube_binaries() {
 }
 
 init_cluster() {
-    if [ -z "${JOIN_URL}" ]; then
-        fatal "The join url has not been passed, ABORTING"
-        return
-    fi
-
     info "Initializing the control-plane"
-    local KUBEADM_ARGS="--token ${JOIN_TOKEN} --certificate-key ${JOIN_CERT_KEY_HASH} --control-plane-endpoint ${JOIN_URL} --apiserver-advertise-address ${KUBEADM_ADVERTISE_ADDRESS} --apiserver-bind-port ${KUBEADM_BIND_PORT} --upload-certs"
+    local KUBEADM_ARGS="--token ${JOIN_TOKEN} --certificate-key ${JOIN_TOKEN_CERT_KEY} --control-plane-endpoint ${JOIN_URL} --apiserver-advertise-address ${ADVERTISE_ADDRESS} --apiserver-bind-port ${BIND_PORT} --upload-certs"
     if [ -f "${KUBEADM_CONFIG}" ]; then
-        KUBEADM_ARGS="--config ${KUBEADM_CONFIG}"
+        KUBEADM_ARGS="--config ${KUBEADM_CONFIG} --upload-certs"
     fi
-    kubeadm init ${KUBEADM_ARGS} "${KUBEADM_VERBOSE}"
+    kubeadm init ${KUBEADM_ARGS} ${KUBEADM_VERBOSE}
 }
 
 join_node() {
@@ -314,41 +310,40 @@ join_node() {
         KUBEADM_ARGS="${KUBEADM_ARGS} --discovery-token-unsafe-skip-ca-verification"
     fi
 
-    if [ "${IS_CONTROLPLANE}" ]; then
-        KUBEADM_ARGS="${KUBEADM_ARGS} --control-plane --certificate-key ${JOIN_CERT_KEY_HASH}"
+    if [ "${JOIN_AS_CP}" ]; then
+        KUBEADM_ARGS="${KUBEADM_ARGS} --control-plane --certificate-key ${JOIN_TOKEN_CERT_KEY}"
     elif [ -f "${KUBEADM_CONFIG}" ]; then
         KUBEADM_ARGS="--config ${KUBEADM_CONFIG}"
     fi
-
-    kubeadm join ${KUBEADM_ARGS} "${KUBEADM_VERBOSE}"
+    kubeadm join ${KUBEADM_ARGS} ${KUBEADM_VERBOSE}
 }
 
-verify_join_url() {
-    local join_url=${JOIN_URL#http://}  # strip "http://" prefix
-    local join_url=${JOIN_URL#https://}  # strip "https://" prefix
-    join_url=${join_url%%:*}  # strip everything after the first colon (port number)
-
-    # resolve JOIN_URL to an IP address
-    local resolved_ip=$(getent ahosts ${join_url} | awk 'NR==1 {print $1}')
-
-    if [[ -z ${resolved_ip} ]]; then
-        warn "Unable to resolve JOIN_URL (${join_url}) to an IP address or JOIN_URL is not a valid FQDN"
-        return 1  # error
-    fi
-
-    local ip_addresses=$(hostname -I)
-
-    # check if resolved IP address is in the list of IP addresses
-    for ip_address in ${ip_addresses}; do
-        if [[ ${resolved_ip} == ${ip_address} ]]; then
-            return 0  # success
-        fi
-    done
-
-    # resolved IP address not found in IP address list
-    warn "The resolved IP address (${resolved_ip}) for JOIN_URL (${JOIN_URL}) is not contained inside the operating system network interfaces"
-    return 1  # error
-}
+#verify_join_url() {
+#    local join_url=${JOIN_URL#http://}  # strip "http://" prefix
+#    local join_url=${JOIN_URL#https://}  # strip "https://" prefix
+#    join_url=${join_url%%:*}  # strip everything after the first colon (port number)
+#
+#    # resolve JOIN_URL to an IP address
+#    local resolved_ip=$(getent ahosts ${join_url} | awk 'NR==1 {print $1}')
+#
+#    if [[ -z ${resolved_ip} ]]; then
+#        warn "Unable to resolve JOIN_URL (${join_url}) to an IP address or JOIN_URL is not a valid FQDN"
+#        return 1  # error
+#    fi
+#
+#    local ip_addresses=$(hostname -I)
+#
+#    # check if resolved IP address is in the list of IP addresses
+#    for ip_address in ${ip_addresses}; do
+#        if [[ ${resolved_ip} == ${ip_address} ]]; then
+#            return 0  # success
+#        fi
+#    done
+#
+#    # resolved IP address not found in IP address list
+#    warn "The resolved IP address (${resolved_ip}) for JOIN_URL (${JOIN_URL}) is not contained inside the operating system network interfaces"
+#    return 1  # error
+#}
 
 # install container runtime and kubernetes components
 install_kube() {
@@ -440,19 +435,25 @@ do_kube_setup() {
 }
 
 do_kube_init() {
-    # verify if the resolved JOIN_URL is contained inside the VM network interfaces
-    if verify_join_url; then
-        info "Creating k8s cluster"
-        init_cluster
-    else
-        info "Joining node as another control-plane for HA"
-        declare -g IS_CONTROLPLANE=true
-        join_node
-    fi
+#    # verify if the resolved JOIN_URL is contained inside the VM network interfaces
+#    if verify_join_url; then
+#        info "Creating k8s cluster"
+#        init_cluster
+#    else
+#        info "Joining node as another control-plane for HA"
+#        declare -g IS_CONTROLPLANE=true
+#        join_node
+#    fi
+    init_cluster
 }
 
 do_kube_join() {
     info "Joining node as a worker"
+    join_node
+}
+
+do_kube_join-cp() {
+    info "Joining node as control plane"
     join_node
 }
 
