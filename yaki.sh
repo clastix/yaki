@@ -132,7 +132,6 @@ setup_env() {
         warn "The bind port has not been passed, a predefined value will be used"
         BIND_PORT="6443"
     fi
-
 }
 
 # info logs the given argument at info log level.
@@ -316,7 +315,6 @@ join_node() {
     elif [ -f "${KUBEADM_CONFIG}" ]; then
         KUBEADM_ARGS="--config ${KUBEADM_CONFIG}"
     fi
-
     kubeadm join ${KUBEADM_ARGS} ${KUBEADM_VERBOSE}
 }
 
