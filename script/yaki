@@ -237,7 +237,7 @@ init_cluster() {
     [ -z "${JOIN_URL}" ] && [ -z "${KUBEADM_CONFIG}" ] && fatal "Either JOIN_URL or KUBEADM_CONFIG must be set"
 
     info "Initializing the control-plane"
-    local KUBEADM_ARGS="--upload-certs"
+    local KUBEADM_ARGS="--upload-certs --kubernetes-version ${KUBERNETES_VERSION}"
 
     # Appending Arguments:
     # If KUBEADM_CONFIG is set, it appends --config ${KUBEADM_CONFIG} to KUBEADM_ARGS.

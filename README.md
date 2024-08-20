@@ -33,7 +33,7 @@ The script expects some tools to be installed on your machines. It will fail if 
 Choose a "seed" machine hosting the control plane of the Kubernetes cluster, login to the machine and run:
 
 ```bash
-curl -sfL https://goyaki.clastix.io | sudo bash -s
+curl -sfL https://goyaki.clastix.io | sudo bash -s init
 ```
 
 the script will setup the machine, install the container runtime `containerd`, among other required tools, install the `kubelet`, `kubeadm`, `kubectl` binaries and setup the control plane.
