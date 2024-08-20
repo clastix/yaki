@@ -1,28 +1,42 @@
-# Setup Kubernetes
-This guide will lead you through the process of creating a basic Kubernetes setup.
+# Advanced Usage
+This guide will lead you through the process of creating an High Availability Kubernetes cluster using `yaki`.
 
-It requires:
+## Requirements
 
-- (optional) a bootstrap node;
-- an arbitrary number of (virtual) machines as nodes of the cluster.
+Make sure your environment fulfills following requirements:
 
-Procedure:
+* A Linux workstation as bootstrap machine.
+* A set of compatible Linux machines with `systemd` for control plane, datastore (`etcd`), and workers.
+* An odd number (three recommended) of machines that will run `etcd` and other control plane services.
+* For each `etcd` machine, an additional `sdb` disk of 10GB.
+* For each `worker` machine, an additional `sdb` disk of 64GB.
+* Full network connectivity between all machines in the cluster (public or private network is fine).
+* Unique hostname, MAC address, and IP address for every machine.
+* A virtual IP address in the same network to allow control plane load balancing.
+* A second virtual IP address in the same network to allow workloads load balancing.
+* Swap configuration. The default behavior of a `kubeadm` install was to fail to start if swap memory was detected.
+* Must be run as the root user or through `sudo`.
+
+## Prerequisites
+
+The script expects some tools to be installed on your machines. It will fail if they are not found: `conntrack`, `socat`, `ip`, `iptables`, `modprobe`, `sysctl`, `systemctl`, `nsenter`, `ebtables`, `ethtool`, `wget`.
+
+> Most of them should be already available in a bare Ubuntu installation.
+
+## Procedure
 
   * [Prepare the bootstrap workspace](#prepare-the-bootstrap-workspace)
-  * [Install Prerequisites](#install-prerequisites)
-  * [Install Kubernetes](#install-kubernetes)
   * [Create the cluster](#create-the-cluster)
   * [Install addons](#install-addons)
   * [Cleanup](#cleanup)
 
 ## Prepare the bootstrap workspace
-This guide is supposed to be run from a remote or local bootstrap machine:
 
-First, prepare the workspace directory:
+First, prepare the bootstrap workspace directory:
 
 ```bash
 git clone https://github.com/clastix/yaki
-cd yaki
+cd guides
 ```
 
 ### Install kubectl
@@ -31,7 +45,7 @@ For the administration of the kubernetes cluster, install the `kubectl` utility 
 Install `kubectl` on Linux
 
 ```bash
-KUBECTL_VER=v1.26.12
+KUBECTL_VER=v1.30.2
 KUBECTL_URL=https://dl.k8s.io/release
 curl -LO ${KUBECTL_URL}/${KUBECTL_VER}/bin/linux/amd64/kubectl
 sudo mv kubectl /usr/local/bin/kubectl
@@ -42,7 +56,7 @@ sudo chmod +x /usr/local/bin/kubectl
 Install `kubectl` on OSX
 
 ```bash
-KUBECTL_VER=v1.26.1
+KUBECTL_VER=v1.30.2
 KUBECTL_URL=https://dl.k8s.io/release
 curl -LO ${KUBECTL_URL}/${KUBECTL_VER}/bin/darwin/amd64/kubectl
 sudo mv kubectl /usr/local/bin/kubectl
@@ -56,7 +70,7 @@ For the administration of the `etcd` cluster, install the `etcdctl` utility on t
 Install `etcdctl` on Linux:
 
 ```bash
-ETCD_VER=v3.5.1
+ETCD_VER=v3.5.6
 ETCD_URL=https://storage.googleapis.com/etcd
 curl -LO ${ETCD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz
 tar xzvf etcd-${ETCD_VER}-linux-amd64.tar.gz -d /tmp
@@ -66,7 +80,7 @@ sudo cp /tmp/etcd-${ETCD_VER}-linux-amd64/etcdctl /usr/local/bin/etcdctl
 Install `etcdctl` on OSX
 
 ```bash
-ETCD_VER=v3.5.1
+ETCD_VER=v3.5.6
 ETCD_URL=https://storage.googleapis.com/etcd
 curl -LO ${ETCD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-darwin-amd64.zip
 unzip etcd-${ETCD_VER}-darwin-amd64.zip -d /tmp
@@ -79,7 +93,7 @@ For the administration of the additional components on the kubernetes cluster, d
 Install `helm` on Linux
 
 ```bash
-HELM_VER=v3.9.2
+HELM_VER=v3.15.2
 HELM_URL=https://get.helm.sh
 curl -LO ${HELM_URL}/helm-${HELM_VER}-linux-amd64.tar.gz
 tar xzvf helm-${HELM_VER}-linux-amd64.tar.gz -C /tmp
@@ -89,7 +103,7 @@ sudo cp /tmp/linux-amd64/helm /usr/local/bin/helm
 Install `helm` on OSX
 
 ```bash
-HELM_VER=v3.9.2
+HELM_VER=v3.15.2
 HELM_URL=https://get.helm.sh
 curl -LO ${HELM_URL}/helm-${HELM_VER}-darwin-amd64.tar.gz
 tar xzvf helm-${HELM_VER}-darwin-amd64.tar.gz -C /tmp
@@ -97,9 +111,7 @@ sudo cp /tmp/darwin-amd64/helm /usr/local/bin/helm
 ```
 
 ### Get the infrastucture
-In this guide, we assume the infrastructure that will host the kubernetes cluster is already in place. If this is not the case, you can use any way to provision it, according to your environment and preferences.
-
-Throughout the instructions, shell variables are used to indicate values that you should adjust to your own environment.
+In this guide, we assume the infrastructure that will host the kubernetes cluster is already in place. If this is not the case, you can use any way to provision it, according to your environment and preferences. Throughout the instructions, shell variables are used to indicate values that you should adjust to your own environment.
 
 ```bash
 source setup.env
@@ -137,7 +149,8 @@ for i in "${!HOSTS[@]}"; do
 done
 ```
 
-## Install prerequisites
+## Create the cluster
+To create an High Availability Kubernetes cluster, you first configure machines for storage and load balancing, then use `yaki` to create the cluster.
 
 ### Configure etcd disk layout
 As per `etcd` [requirements](https://etcd.io/docs/v3.5/op-guide/hardware/#disks), back `etcd`’s storage with a SSD. A SSD usually provides lower write latencies and with less variance than a spinning disk, thus improving the stability and reliability of `etcd`.
@@ -206,7 +219,7 @@ done
 ```
 
 ### Setup keepalived
-Setup `kubelived` on control plane nodes to expose the `kube-apiserver` cluster endpoint: 
+Setup `kubelived` (with `apt`) on control plane nodes to expose the `kube-apiserver` cluster endpoint: 
 
 ```bash
 cat << EOF | tee master-keepalived.conf
@@ -256,7 +269,7 @@ ssh ${USER}@${MASTER} -t 'sudo systemctl enable keepalived'
 done
 ```
 
-Setup `kubelived` on worker nodes to expose workloads
+Setup `kubelived` (with `apt`) on worker nodes to expose workloads:
 
 ```bash
 cat << EOF | tee worker-keepalived.conf
@@ -305,63 +318,9 @@ ssh ${USER}@${WORKER} -t 'sudo systemctl enable keepalived'
 done
 ```
 
-## Install Kubernetes
-Use `./yaki.sh setup` to prepare the machines and install Kubernetes components. Use environment variables to adjust the setup according to your needs:
-
-```bash
-    INSTALL_METHOD: The installation method to use: 'apt', 'tar', 'rpm' (TBD), or 'airgap' (TBD). Default is 'tar'
-    CONTAINERD_VERSION: Version of container runtime containerd. Default is 'v1.7.12' (tar only)
-    RUNC_VERSION: Version of runc to install. Default is 'v1.1.11' (tar only)
-    CNI_VERSION: Version of CNI plugins to install. Default is 'v1.4.0' (tar only)
-    CRICTL_VERSION: Version of crictl to install. Default is 'v1.29.0' (tar only)
-    KUBERNETES_VERSION: Version of kubernetes to install. Default is 'v1.28.0'
-    DEBUG: Set to 1 for more verbosity during script execution. Default is 0.
-```
-
-Choose between different methods of installation:
-
-- `apt` based
-- `rpm` based (not implemented)
-- `tar` based (default)
-- airgapped (not implemented)
-
-### `apt` based
-For Debian based distributions:
-
-```bash
-for i in "${!HOSTS[@]}"; do
-  HOST=${HOSTS[$i]}
-  ssh ${USER}@${HOST} -t 'sudo env KUBERNETES_VERSION=v1.28.6 env INSTALL_METHOD=apt bash -s' -- < yaki.sh setup
-done
-```
-
-### `tar` based
-Install without a package manager:
-
-```bash
-for i in "${!HOSTS[@]}"; do
-  HOST=${HOSTS[$i]}
-  ssh ${USER}@${HOST} -t 'sudo env KUBERNETES_VERSION=v1.28.6 env INSTALL_METHOD=tar bash -s' -- < yaki.sh setup
-done
-```
-
-## Create the cluster
-To create the Kubernetes cluster, you first initialize the seed machine with `yaki.sh init` command and then will join the remaining machines with `yaki.sh join` command.
-
-Use environment variables to adjust the cluster formation according to your needs:
-
-```bash
-  KUBEADM_CONFIG: Path to the kubeadm config file to use. Default is not set.
-  ADVERTISE_ADDRESS: Address to advertise for the api-server. Default is '0.0.0.0'
-  BIND_PORT: Port to use for the api-server. Default is '6443'
-  JOIN_TOKEN: Token to join the control-plane. Default is 'abcdef.1234567890abcdef'
-  JOIN_TOKEN_CACERT_HASH: Token Certificate Authority hash to join the control-plane. Default is not set.
-  JOIN_TOKEN_CERT_KEY: Token Certificate Key to join the control-plane, cp node will not join if not passed. Default is '78102ac003f419c81bd4e1b23870227b1d98300b8fcc50e859ede1203d8fb2ed'
-  JOIN_URL: URL to join the control-plane, node will not join if not passed. Default is not set.
-    echo "  JOIN_AS_CP: Switch to join either as control plane or worker. Default is 0.
-```
 
 ### Initialize the seed node
+
 Create the `kubeadm-config.yaml` file in the local path:
 
 ```bash
@@ -425,10 +384,11 @@ and copy it to the seed machine:
 ```bash
 scp kubeadm-config.yaml ${USER}@${SEED}:
 ```
+
 Initialize the seed machine:
 
 ```bash
-ssh ${USER}@${SEED} 'sudo env KUBEADM_CONFIG=kubeadm-config.yaml bash -s' -- < yaki.sh init
+ssh ${USER}@${SEED} 'sudo env KUBEADM_CONFIG=kubeadm-config.yaml bash -s' -- < yaki init
 ```
 
 Once the installation completes, export the following envs from the output of the command above:
@@ -462,7 +422,7 @@ Join the remaining control plane nodes:
 MASTERS=(${MASTER1} ${MASTER2})
 for i in "${!MASTERS[@]}"; do
   MASTER=${MASTERS[$i]}
-  ssh ${USER}@${MASTER} 'sudo env JOIN_URL='${JOIN_URL}' env JOIN_TOKEN='${JOIN_TOKEN}' env JOIN_TOKEN_CERT_KEY='${JOIN_TOKEN_CERT_KEY}' env JOIN_TOKEN_CACERT_HASH='${JOIN_TOKEN_CACERT_HASH}' env JOIN_AS_CP=1 bash -s' -- < yaki.sh join;
+  ssh ${USER}@${MASTER} 'sudo env JOIN_URL='${JOIN_URL}' env JOIN_TOKEN='${JOIN_TOKEN}' env JOIN_TOKEN_CERT_KEY='${JOIN_TOKEN_CERT_KEY}' env JOIN_TOKEN_CACERT_HASH='sha256:${JOIN_TOKEN_CACERT_HASH}' env JOIN_ASCP=1 bash -s' -- < yaki join;
 done
 ```
 
@@ -471,7 +431,7 @@ Join all the worker nodes:
 ```bash
 for i in "${!WORKERS[@]}"; do
   WORKER=${WORKERS[$i]}
-  ssh ${USER}@${WORKER} 'sudo env JOIN_URL='${JOIN_URL}' env JOIN_TOKEN='${JOIN_TOKEN}' env JOIN_TOKEN_CACERT_HASH='${JOIN_TOKEN_CACERT_HASH}' bash -s' -- < yaki.sh join;
+  ssh ${USER}@${WORKER} 'sudo env JOIN_URL='${JOIN_URL}' env JOIN_TOKEN='${JOIN_TOKEN}' env JOIN_TOKEN_CACERT_HASH='sha256:${JOIN_TOKEN_CACERT_HASH}' bash -s' -- < yaki join;
 done
 ```
 
@@ -501,13 +461,14 @@ export ETCDCTL_ENDPOINTS=https://${ETCD0}:2379
 
 etcdctl member list -w table
 ```
+
 ## Install addons
 
 ### Install the CNI
-Install the CNI Calico plugin:
+Install the CNI Calico plugin from the example manifest `calico.yaml`:
 
 ```bash
-kubectl apply -f addons/calico.yaml
+kubectl apply -f calico.yaml
 ```
 
 And check all the nodes are now in `Ready` state
@@ -517,20 +478,20 @@ kubectl get nodes
 ```
 
 ### Install the Local Path Storage Provisioner
-Install the Local Path Provisioner plugin:
+Install the Local Path Provisioner plugin from the example manifest `localpath.yaml`:
 
 ```bash
-kubectl apply -f addons/localpath.yaml
+kubectl apply -f localpath.yaml
 ```
 
 ## Cleanup
-For each node, login and clean it
+For each machine, clean the installation by calling 'yaki' with the 'reset' command:
 
 ```bash
 for i in "${!HOSTS[@]}"; do
   HOST=${HOSTS[$i]}
-  ssh ${USER}@${HOST} -t 'sudo kubeadm reset -f';
-  ssh ${USER}@${HOST} -t 'sudo rm -rf /etc/cni/net.d';
-  ssh ${USER}@${HOST} -t 'sudo systemctl reboot';
+  ssh ${USER}@${HOST} 'sudo bash -s' -- < yaki reset;
 done
 ```
+
+That's all folks!
