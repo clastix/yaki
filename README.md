@@ -1,8 +1,6 @@
 # Yaki
 
-_Yet Another Kubernetes Installer_
-
-Yaki is a bash script to lead the installation of a barebone **Kubernetes** cluster in a simplified and automated way and it is entirely independent of the infrastructure you’re running on.
+**Yaki - Another Kubernetes Installer** leads the installation of a barebone **Kubernetes** cluster in a simplified and automated way and it is entirely independent of the infrastructure you’re running on.
 
 It leverages on [kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/), one of the official installation tools from Kubernetes community.
 
@@ -61,7 +59,7 @@ Alternatively, if you are the root user, you can run:
 export KUBECONFIG=/etc/kubernetes/admin.conf
 ```
 
-> If you are adding additional control plane nodes, you must have an odd number in total. An odd number is needed to maintain quorum. See [Advanced Usage](advanced-usage) for more details.
+> If you are adding additional control plane nodes, you must have an odd number in total. An odd number is needed to maintain quorum. See [Advanced Usage](guides/advanced.md) for more details.
 
 ### Join Workers
 
@@ -89,8 +87,6 @@ Please refer to the [Installing Addons](https://kubernetes.io/docs/concepts/clus
 ```bash
 kubectl apply -f <add-on.yaml>
 ```
-
-Also, see the [Advanced Usage](advanced-usage) for more details.
 
 ## Documentation
 
@@ -156,7 +152,7 @@ Environment variables:
 
 ## Advanced Usage
 
-A guide with more advanced usage of `yaki` can be found [here](guides/advanced.md).
+A guide with more advanced usage of `yaki` can be found [here](guides/guides/advanced.md).
 
 ## Contributions
 
