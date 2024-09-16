@@ -354,6 +354,7 @@ dns:
   imageRepository: registry.k8s.io/coredns
   imageTag: v1.9.3
 controlPlaneEndpoint: "${MASTER_VIP}:${MASTER_PORT}"
+kubernetesVersion: "${CLUSTER_VERSION}"
 etcd:
   local:
     dataDir: /var/lib/etcd/data

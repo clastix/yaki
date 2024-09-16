@@ -41,7 +41,7 @@ Commands:
     - Requires: JOIN_URL (optional), KUBEADM_CONFIG (optional), ADVERTISE_ADDRESS(optional), BIND_PORT (optional), KUBERNETES_VERSION (optional)
     - Example: KUBERNETES_VERSION=v1.30.2 yaki init
     - Example: JOIN_URL=<control-plane-endpoint>:<port> KUBERNETES_VERSION=v1.30.2 yaki init
-    - Example: KUBEADM_CONFIG=kubeadm-config.yaml KUBERNETES_VERSION=v1.30.2 yaki init
+    - Example: KUBEADM_CONFIG=kubeadm-config.yaml yaki init
 
   join: Join a control plane node to the cluster
     - This command joins the node as control plane to an existing Kubernetes cluster.
@@ -237,7 +237,7 @@ init_cluster() {
     [ -z "${JOIN_URL}" ] && [ -z "${KUBEADM_CONFIG}" ] && fatal "Either JOIN_URL or KUBEADM_CONFIG must be set"
 
     info "Initializing the control-plane"
-    local KUBEADM_ARGS="--upload-certs --kubernetes-version ${KUBERNETES_VERSION}"
+    local KUBEADM_ARGS="--upload-certs"
 
     # Appending Arguments:
     # If KUBEADM_CONFIG is set, it appends --config ${KUBEADM_CONFIG} to KUBEADM_ARGS.
