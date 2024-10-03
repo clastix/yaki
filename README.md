@@ -152,7 +152,7 @@ Environment variables:
 
 ## Advanced Usage
 
-A guide with more advanced usage of `yaki` can be found [here](guides/guides/advanced.md).
+A guide with more advanced usage of `yaki` can be found [here](guides/advanced.md).
 
 ## Contributions
 
