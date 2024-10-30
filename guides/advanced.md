@@ -45,7 +45,7 @@ For the administration of the kubernetes cluster, install the `kubectl` utility 
 Install `kubectl` on Linux
 
 ```bash
-KUBECTL_VER=v1.30.2
+KUBECTL_VER=v1.30.5
 KUBECTL_URL=https://dl.k8s.io/release
 curl -LO ${KUBECTL_URL}/${KUBECTL_VER}/bin/linux/amd64/kubectl
 sudo mv kubectl /usr/local/bin/kubectl
@@ -56,7 +56,7 @@ sudo chmod +x /usr/local/bin/kubectl
 Install `kubectl` on OSX
 
 ```bash
-KUBECTL_VER=v1.30.2
+KUBECTL_VER=v1.30.5
 KUBECTL_URL=https://dl.k8s.io/release
 curl -LO ${KUBECTL_URL}/${KUBECTL_VER}/bin/darwin/amd64/kubectl
 sudo mv kubectl /usr/local/bin/kubectl
