@@ -12,7 +12,6 @@ fi
 
 BIN_DIR="/usr/local/bin"
 SBIN_DIR="/usr/local/sbin"
-SERVICE_DIR="/etc/systemd/system"
 COMMAND=$1
 
 # Define global compatibility matrix
@@ -212,10 +211,10 @@ install_kube_binaries() {
     mv {kubeadm,kubelet} ${BIN_DIR}
 
     # Install kubelet service
-    local VERSION="v0.16.2"
-    wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /etc/systemd/system/kubelet.service
-    mkdir -p /etc/systemd/system/kubelet.service.d
-    wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    local RELEASE_VERSION="v0.16.2" # Release version of kubelet systemd service
+    wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /usr/lib/systemd/system/kubelet.service
+    mkdir -p /usr/lib/systemd/system/kubelet.service.d
+    wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
     systemctl daemon-reload && systemctl enable --now kubelet
 
     # Install kubectl
@@ -296,7 +295,8 @@ remove_kube() {
     info "removing kubernetes components"
     systemctl stop kubelet || true
     kubeadm reset -f || true
-    rm -rf ${BIN_DIR}/{kubeadm,kubelet,kubectl} /etc/kubernetes /var/run/kubernetes /var/lib/kubelet /var/lib/etcd ${SERVICE_DIR}/kubelet.service ${SERVICE_DIR}/kubelet.service.d
+    rm -rf ${BIN_DIR}/{kubeadm,kubelet,kubectl} /etc/kubernetes /var/run/kubernetes /var/lib/kubelet /var/lib/etcd /usr/lib/systemd/system/kubelet.service /usr/lib/systemd/system/kubelet.service.d
+    systemctl daemon-reload
     info "Kubernetes components removed"
 }
 
