@@ -56,6 +56,7 @@ Commands:
   reset: Reset the node
     - This command removes all Kubernetes components and configurations from the node.
     - Example: yaki reset
+    - If set REBOOT=true, the machine will be rebooted after reset.
 
   help: Print this help
     - Displays this help message.
@@ -80,6 +81,7 @@ Environment variables:
   | JOIN_URL                | URL to join the control-plane.                              | Not set    |
   | JOIN_ASCP               | Switch to join either as control plane or worker.           | 0          |
   | DEBUG                   | Set to 1 for more verbosity during script execution.        | 0          |
+  | REBOOT                  | Set to true to reboot the machine after reset.              | false      |
   +-------------------------+-------------------------------------------------------------+------------+
 
 EOF
@@ -361,7 +363,7 @@ do_reset() {
     remove_containerd
     remove_binaries
     clean_iptables
-    reboot_machine
+    [ "${REBOOT}" = true ] && reboot_machine
 }
 
 # Main script execution
