@@ -3,9 +3,9 @@
 set -e
 
 # Set verbosity
-if [ "${DEBUG}" = 1 ]; then
+if [ "${DEBUG}" = true ]; then
     set -x
-    KUBEADM_VERBOSE="-v=8"
+    KUBEADM_VERBOSE="-v=5"
 else
     KUBEADM_VERBOSE="-v=3"
 fi
@@ -46,7 +46,7 @@ Commands:
     - This command joins the node as control plane to an existing Kubernetes cluster.
     - It also installs all necessary prerequisites, container runtime, CNI plugins, and Kubernetes binaries.
     - Requires: JOIN_URL, JOIN_TOKEN, JOIN_TOKEN_CACERT_HASH, JOIN_ASCP, KUBERNETES_VERSION (optional)
-    - Example: JOIN_URL=<control-plane-endpoint>:<port> JOIN_TOKEN=<token> JOIN_TOKEN_CERT_KEY=<key> JOIN_TOKEN_CACERT_HASH=sha256:<hash> JOIN_ASCP=1 KUBERNETES_VERSION=v1.30.5 yaki join
+    - Example: JOIN_URL=<control-plane-endpoint>:<port> JOIN_TOKEN=<token> JOIN_TOKEN_CERT_KEY=<key> JOIN_TOKEN_CACERT_HASH=sha256:<hash> JOIN_ASCP=true KUBERNETES_VERSION=v1.30.5 yaki join
 
   join: Join a node to the cluster
     - This command joins the node to an existing Kubernetes cluster.
@@ -79,8 +79,8 @@ Environment variables:
   | JOIN_TOKEN_CACERT_HASH  | Token Certificate Authority hash to join the control-plane. | Not set    |
   | JOIN_TOKEN_CERT_KEY     | Token Certificate Key to join the control-plane.            | Not set    |
   | JOIN_URL                | URL to join the control-plane.                              | Not set    |
-  | JOIN_ASCP               | Switch to join either as control plane or worker.           | 0          |
-  | DEBUG                   | Set to 1 for more verbosity during script execution.        | 0          |
+  | JOIN_ASCP               | Switch to join either as control plane or worker.           | false      |
+  | DEBUG                   | Set to true for more verbosity during script execution.     | false      |
   | REBOOT                  | Set to true to reboot the machine after reset.              | false      |
   +-------------------------+-------------------------------------------------------------+------------+
 
@@ -113,12 +113,15 @@ setup_env() {
     [ "$(id -u)" -eq 0 ] || fatal "You need to be root to perform this install"
     # Set default values
     KUBERNETES_VERSION=${KUBERNETES_VERSION:-v1.30.5}
+    JOIN_ASCP=${JOIN_ASCP:-false}
     CONTAINERD_VERSION=${CONTAINERD_VERSION:-$(get_version "containerd")}
     RUNC_VERSION=${RUNC_VERSION:-$(get_version "runc")}
     CNI_VERSION=${CNI_VERSION:-$(get_version "cni")}
     CRICTL_VERSION=${CRICTL_VERSION:-$(get_version "crictl")}
     ADVERTISE_ADDRESS=${ADVERTISE_ADDRESS:-0.0.0.0}
     BIND_PORT=${BIND_PORT:-6443}
+    REBOOT=${REBOOT:-false}
+    DEBUG=${DEBUG:-false}
 }
 
 # Check if prerequisites are installed
@@ -281,7 +284,7 @@ join_node() {
     local KUBEADM_ARGS="${JOIN_URL} --token ${JOIN_TOKEN} --discovery-token-ca-cert-hash ${JOIN_TOKEN_CACERT_HASH}"
 
     # If the node is joining as control plane, add control plane specific arguments
-    if [ "${JOIN_ASCP}" ]; then
+    if [ "${JOIN_ASCP}" = true ]; then
         # Check if JOIN_TOKEN_CERT_KEY is set, if not, terminate with an error message
         [ -z "${JOIN_TOKEN_CERT_KEY}" ] && fatal "JOIN_TOKEN_CERT_KEY is not set for control plane join"
         # Append control plane specific arguments to KUBEADM_ARGS
@@ -331,8 +334,8 @@ clean_iptables() {
 
 # Reboot the machine
 reboot_machine() {
-    info "Rebooting the machine now..."
-    systemctl reboot
+    info "Rebooting the machine in 1 minute..."
+    shutdown -r +1 "System will reboot in 1 minute"
 }
 
 # Main commands
@@ -363,7 +366,11 @@ do_reset() {
     remove_containerd
     remove_binaries
     clean_iptables
-    [ "${REBOOT}" = true ] && reboot_machine
+    if [ "${REBOOT}" = true ]; then
+        reboot_machine
+    fi
+    info "Reset completed successfully"
+    exit 0
 }
 
 # Main script execution
