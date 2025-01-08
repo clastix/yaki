@@ -1,0 +1,16 @@
+---
+- name: Prepare the kubeadm-config file
+  become: true
+  block:
+    - name: Ensure /etc/kubernetes directory exists
+      file:
+        path: /etc/kubernetes
+        state: directory
+        mode: '0755'
+
+    - name: Load kubeadm configuration file from template
+      template:
+        src: kubeadm-config.yaml.j2
+        dest: /etc/kubernetes/kubeadm-config.yaml
+        mode: '0644'
+  when: seed is defined and seed | bool

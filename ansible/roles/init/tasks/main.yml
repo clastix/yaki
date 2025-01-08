@@ -1,0 +1,16 @@
+---
+
+- name: create kubeadm-config file
+  become: true
+  block:
+  - import_tasks: kubeadm_config.yml
+
+- name: Initialize seed control_plane node
+  become: true
+  block:
+  - import_tasks: init.yml
+
+- name: Join other control_plane nodes
+  become: true
+  block:
+  - import_tasks: join_ascp.yml

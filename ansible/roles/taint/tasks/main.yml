@@ -1,0 +1,7 @@
+---
+- name: Untaint control plane node if schedulable
+  command: kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/control-plane:NoSchedule- --kubeconfig /etc/kubernetes/admin.conf
+  become: true
+  become_user: root
+  when: schedulable | bool
+  register: untaint_result

@@ -1,0 +1,16 @@
+---
+- name: Setup Control Plane
+  hosts: control_plane
+  become: true
+  become_method: sudo
+  become_user: root
+  roles:
+    - keepalived
+    - haproxy
+    - init
+
+
+
+
+
+

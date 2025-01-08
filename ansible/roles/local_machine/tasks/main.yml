@@ -1,0 +1,26 @@
+- name: Install kubectl
+  become: true
+  block:
+  - import_tasks: kubectl.yml
+
+- name: Install etcdctl
+  become: true
+  block:
+  - import_tasks: etcdctl.yml
+
+- name: Install kubeadm
+  become: true
+  block:
+  - import_tasks: kubeadm.yml
+
+- name: Install Helm
+  become: true
+  block:
+  - import_tasks: helm.yml
+
+- name: Install flux
+  become: true
+  block:
+  - import_tasks: flux.yml
+  
+
