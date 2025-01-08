@@ -1,0 +1,32 @@
+- name: Set flux version without 'v'
+  set_fact:
+    version: "{{ flux_version | regex_replace('^v', '') }}"
+  delegate_to: localhost
+
+- name: Download Flux CLI tarball
+  ansible.builtin.get_url:
+    url: "https://github.com/fluxcd/flux2/releases/download/{{ flux_version }}/flux_{{ version }}_linux_{{ arch }}.tar.gz"
+    dest: "/tmp/flux_{{ version }}_linux_{{ arch }}.tar.gz"
+  delegate_to: localhost
+  become: true
+
+- name: Extract Flux CLI tarball
+  ansible.builtin.unarchive:
+    src: "/tmp/flux_{{ version }}_linux_{{ arch }}.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+  delegate_to: localhost
+  become: true
+
+- name: Move Flux CLI binary to /usr/local/bin
+  ansible.builtin.command:
+    cmd: mv /tmp/flux /usr/local/bin/flux
+  delegate_to: localhost
+  become: true
+
+- name: Set permissions for Flux CLI binary
+  ansible.builtin.file:
+    path: /usr/local/bin/flux
+    mode: '0755'
+  delegate_to: localhost
+  become: true

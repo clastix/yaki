@@ -1,0 +1,27 @@
+- name: Install etcdctl
+  ansible.builtin.get_url:
+    url: "https://github.com/etcd-io/etcd/releases/download/{{ etcd_version }}/etcd-{{ etcd_version }}-linux-{{ arch }}.tar.gz"
+    dest: /tmp/etcd-{{ etcd_version }}-linux-{{ arch }}.tar.gz
+  delegate_to: localhost
+
+- name: Extract etcdctl
+  ansible.builtin.unarchive:
+    src: /tmp/etcd-{{ etcd_version }}-linux-{{ arch }}.tar.gz
+    dest: /tmp
+    remote_src: yes
+  delegate_to: localhost
+
+- name: Move etcdctl to /usr/local/bin
+  ansible.builtin.command:
+    cmd: cp /tmp/etcd-{{ etcd_version }}-linux-{{ arch }}/etcdctl /usr/local/bin/etcdctl
+  args:
+    creates: /usr/local/bin/etcdctl
+  delegate_to: localhost
+
+- name: Set permissions for etcdctl
+  ansible.builtin.file:
+    path: /usr/local/bin/etcdctl
+    owner: root
+    group: root
+    mode: '0755'
+  delegate_to: localhost

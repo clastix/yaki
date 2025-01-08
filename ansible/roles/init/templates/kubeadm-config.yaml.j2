@@ -1,0 +1,52 @@
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  #token: ""
+  ttl: 48h0m0s
+  usages:
+  - signing
+  - authentication
+localAPIEndpoint:
+  advertiseAddress: "0.0.0.0"
+  bindPort: 6443
+nodeRegistration:
+  criSocket: unix:///run/containerd/containerd.sock
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+clusterName: "{{ cluster_name }}"
+certificatesDir: "{{ kubernetes_cert_dir }}"
+imageRepository: registry.k8s.io
+networking:
+  dnsDomain: "{{ dns_domain }}"
+  podSubnet: "{{ pod_cidr }}"
+  serviceSubnet: "{{ svc_cidr }}"
+dns:
+  imageRepository: registry.k8s.io/coredns
+  imageTag: "{{ coredns_version }}"
+controlPlaneEndpoint: "{{ control_plane_endpoint }}:{{ control_plane_port }}"
+kubernetesVersion: "{{ kubernetes_version }}"
+etcd:
+  local:
+    dataDir: "{{ etcd_data_dir }}"
+apiServer:
+  certSANs:
+  - localhost
+  - "{{ control_plane_endpoint }}"
+  - "{{ cluster_name }}.{{ cluster_domain }}"
+scheduler:
+  extraArgs:
+    bind-address: "0.0.0.0" # required to expose metrics
+controllerManager:
+  extraArgs:
+    bind-address: "0.0.0.0" # required to expose metrics
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+metricsBindAddress: "0.0.0.0" # required to expose metrics
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: "systemd"  # tells kubelet about cgroup driver to use (required by containerd)

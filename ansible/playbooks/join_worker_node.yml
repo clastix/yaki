@@ -1,0 +1,9 @@
+---
+
+- name: Join Worker Node 
+  hosts: worker
+  become: true
+  become_method: sudo
+  become_user: root
+  roles:
+   - join_cluster

@@ -1,0 +1,12 @@
+---
+
+- name: Set seed node to the first control plane node
+  set_fact:
+    seed_node: "{{ groups['control_plane'][0] }}"
+  run_once: true
+  delegate_to: localhost
+
+- name: Apply Calico manifest from seed node
+  command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/calico.yaml --kubeconfig /etc/kubernetes/admin.conf
+  delegate_to: "{{ seed_node }}"
+  run_once: true

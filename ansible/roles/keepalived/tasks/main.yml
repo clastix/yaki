@@ -1,0 +1,30 @@
+---
+
+- name: Install keepalived package
+  become: true
+  block:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install keepalived package
+      apt:
+        name: keepalived
+        state: present
+
+- name: Configure, start and enable keepalived service
+  become: true
+  block:
+  - name: Load keepalived configuration from template
+    template:
+      src: keepalived.conf.j2
+      dest: /etc/keepalived/keepalived.conf
+      mode: '0644'
+
+- name: Enable and start keepalived service
+  become: true
+  systemd:
+    name: keepalived
+    enabled: yes
+    state: restarted
+    daemon_reload: yes

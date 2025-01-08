@@ -1,0 +1,23 @@
+- name: Source environment variables
+  ansible.builtin.shell: source /etc/profile.d/k8s_env.sh
+
+- name: Install kubectl
+  become: true
+  block:
+  - import_tasks: kubectl.yml
+
+- name: Install kubeadm
+  become: true
+  block:
+  - import_tasks: kubeadm.yml
+
+- name: Install helm
+  become: true
+  block:
+  - import_tasks: helm.yml
+
+- name: Install flux
+  become: true
+  block:
+  - import_tasks: flux.yml
+  

@@ -1,0 +1,11 @@
+---
+- name: Initialize kubeadm on seed node
+  shell: |
+    curl -sfL https://goyaki.clastix.io | bash -s init
+  become: true
+  environment:
+    KUBEADM_CONFIG: /etc/kubernetes/kubeadm-config.yaml
+  when: seed is defined and seed | bool
+
+
+

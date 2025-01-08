@@ -1,0 +1,38 @@
+---
+# local machine
+ansible_user: clastix
+arch: amd64
+helm_version: v3.15.2
+flux_version: v2.3.0
+
+# etcd
+etcd_version: v3.5.15
+etcd_cert_dir: /etc/kubernetes/pki/etcd
+etcd_data_dir: /var/lib/etcd/data
+etcd_client_port: 2379
+etcd_peer_port: 2380
+etcd_metrics_port: 2381   
+
+# kubernetes
+kubernetes_version: v1.30.5
+kubernetes_cert_dir: /etc/kubernetes/pki
+cluster_name: kubernetes
+cluster_domain: labs.clastix.io
+pod_cidr: 10.36.0.0/16
+svc_cidr: 10.96.0.0/16
+dns_domain: cluster.local
+dns_service: 10.96.0.10
+control_plane_endpoint: 192.168.30.200
+control_plane_port: 443
+control_plane_interface: eth0
+coredns_version: v1.9.3
+calico_version: v3.29.1
+
+# container runtime
+containerd_version: v1.7.16
+runc_version: v1.1.11
+cni_version: v1.4.0
+crictl_version: v1.29.0
+bin_dir: /usr/local/bin
+sbin_dir: /usr/local/sbin
+

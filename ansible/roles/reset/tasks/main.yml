@@ -1,0 +1,10 @@
+---
+- name: Remove Kubernetes cluster from all machines
+  shell: |
+    curl -sfL https://goyaki.clastix.io | bash -sx -s reset
+  become: true
+  environment:
+    REBOOT: 'false'
+    DEBUG: '1'
+  register: reset_output
+  ignore_errors: true

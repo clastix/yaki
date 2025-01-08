@@ -1,0 +1,27 @@
+- name: Download Helm tarball
+  ansible.builtin.get_url:
+    url: "https://get.helm.sh/helm-{{ helm_version }}-linux-{{ arch }}.tar.gz"
+    dest: "/tmp/helm-{{ helm_version }}-linux-{{ arch }}.tar.gz"
+  delegate_to: localhost
+  become: true
+
+- name: Extract Helm tarball
+  ansible.builtin.unarchive:
+    src: "/tmp/helm-{{ helm_version }}-linux-{{ arch }}.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+  delegate_to: localhost
+  become: true
+
+- name: Move Helm binary to /usr/local/bin
+  ansible.builtin.command:
+    cmd: mv /tmp/linux-{{ arch }}/helm /usr/local/bin/helm
+  delegate_to: localhost
+  become: true
+
+- name: Set permissions for Helm binary
+  ansible.builtin.file:
+    path: /usr/local/bin/helm
+    mode: '0755'
+  delegate_to: localhost
+  become: true

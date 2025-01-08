@@ -1,0 +1,50 @@
+---
+- name: Set seed node to the first control plane node
+  set_fact:
+    seed_node: "{{ groups['control_plane'][0] }}"
+  run_once: true
+  delegate_to: localhost
+
+# - name: Find the control plane seed node
+#   set_fact:
+#     seed_node: "{{ groups['control_plane'] | selectattr('seed', 'defined') | selectattr('seed', 'bool') | map(attribute='inventory_hostname') | first }}"
+#   run_once: true
+#   delegate_to: localhost
+
+- name: Generate join token on the control plane seed node
+  shell: kubeadm token create --print-join-command
+  register: kubeadm_join_cmd
+  delegate_to: "{{ seed_node }}"
+
+- name: Parse join command
+  set_fact:
+    join_url: "{{ kubeadm_join_cmd.stdout.split(' ')[2] }}"
+    join_token: "{{ kubeadm_join_cmd.stdout.split(' ')[4] }}"
+    join_token_cacert_hash: "{{ kubeadm_join_cmd.stdout.split(' ')[6] }}"
+  delegate_to: localhost
+
+- name: Print parsed join command
+  debug:
+    msg:
+      - "join_url: {{ join_url }}"
+      - "join_token: {{ join_token }}"
+      - "join_token_cacert_hash: {{ join_token_cacert_hash }}"
+  run_once: true
+  delegate_to: localhost
+
+- name: Share join command with all nodes
+  set_fact:
+    join_url: "{{ join_url }}"
+    join_token: "{{ join_token }}"
+    join_token_cacert_hash: "{{ join_token_cacert_hash }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Join worker nodes
+  shell: |
+    curl -sfL https://goyaki.clastix.io | bash -s join
+  become: true
+  environment:
+    JOIN_URL: "{{ join_url }}"
+    JOIN_TOKEN: "{{ join_token }}"
+    JOIN_TOKEN_CACERT_HASH: "{{ join_token_cacert_hash }}"

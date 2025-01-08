@@ -1,0 +1,42 @@
+# keepalived global configuration
+global_defs {
+    default_interface {{ control_plane_interface }}
+    enable_script_security
+}
+
+vrrp_script apiserver {
+    script   "/usr/bin/curl -s -k https://localhost:{{ control_plane_port }}/healthz -o /dev/null"
+    interval 20
+    timeout  5
+    rise     1
+    fall     1
+    user     root
+}
+
+vrrp_script haproxy {
+    script "/usr/bin/pkill -0 haproxy"
+    interval 10
+    timeout  2
+    weight   6
+    fall     1
+    rise     1
+    user     root
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface {{ control_plane_interface }}
+    virtual_router_id 100
+    priority 100
+    advert_int 20
+    authentication {
+        auth_type PASS
+        auth_pass cGFzc3dvcmQ=
+    }
+    track_script {
+        haproxy
+    }
+    virtual_ipaddress {
+        {{ control_plane_endpoint }} label {{ control_plane_interface }}:VIP
+    }
+}

@@ -1,0 +1,45 @@
+---
+- name: Generate certificate key on seed node
+  shell: kubeadm init phase upload-certs --upload-certs
+  register: cert_key_output
+  when: seed is defined and seed | bool
+
+- name: Extract certificate key
+  set_fact:
+    certificate_key: "{{ cert_key_output.stdout.split('Using certificate key:')[1].strip() }}"
+  when: seed is defined and seed | bool
+
+- name: Generate join token on seed node
+  shell: kubeadm token create --print-join-command --certificate-key {{ certificate_key }}
+  register: kubeadm_join_cmd
+  when: seed is defined and seed | bool
+
+- name: Parse join command
+  set_fact:
+    join_url: "{{ kubeadm_join_cmd.stdout.split(' ')[2] }}"
+    join_token: "{{ kubeadm_join_cmd.stdout.split(' ')[4] }}"
+    join_token_cacert_hash: "{{ kubeadm_join_cmd.stdout.split(' ')[6] }}"
+    join_token_cert_key: "{{ kubeadm_join_cmd.stdout.split(' ')[9] }}"
+  when: seed is defined and seed | bool
+
+- name: Share join command with all nodes
+  set_fact:
+    join_url: "{{ join_url }}"
+    join_token: "{{ join_token }}"
+    join_token_cacert_hash: "{{ join_token_cacert_hash }}"
+    join_token_cert_key: "{{ join_token_cert_key }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Join other control plane nodes
+  shell: |
+    curl -sfL https://goyaki.clastix.io | bash -s join
+  become: true
+  when: seed is not defined or seed | bool == false
+  environment:
+    JOIN_ASCP: "true"
+    JOIN_URL: "{{ join_url }}"
+    JOIN_TOKEN: "{{ join_token }}"
+    JOIN_TOKEN_CACERT_HASH: "{{ join_token_cacert_hash }}"
+    JOIN_TOKEN_CERT_KEY: "{{ join_token_cert_key }}"
+

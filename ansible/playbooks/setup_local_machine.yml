@@ -1,0 +1,8 @@
+---
+- name: Prepare Local Machine
+  hosts: localhost
+  become: true
+  become_method: sudo
+  become_user: root
+  roles:
+    - local_machine

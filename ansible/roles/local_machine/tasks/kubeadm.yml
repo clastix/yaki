@@ -1,0 +1,6 @@
+- name: Install kubeadm
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ kubernetes_version }}/bin/linux/{{ arch }}/kubeadm"
+    dest: /usr/local/bin/kubeadm
+    mode: '0755'
+  delegate_to: localhost

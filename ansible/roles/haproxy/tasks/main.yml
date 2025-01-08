@@ -1,0 +1,30 @@
+---
+
+- name: Install haproxy
+  become: true
+  block:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install haproxy
+      apt:
+        name: haproxy
+        state: present
+
+- name: Configure haproxy service
+  become: true
+  block:
+  - name: Load haproxy configuration from template
+    template:
+      src: haproxy.cfg.j2
+      dest: /etc/haproxy/haproxy.cfg
+      mode: '0644'
+
+- name: Enable and start haproxy service
+  become: true
+  systemd:
+    name: haproxy
+    enabled: yes
+    state: restarted
+    daemon_reload: yes
