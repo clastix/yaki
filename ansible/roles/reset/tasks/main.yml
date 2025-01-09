@@ -5,6 +5,6 @@
   become: true
   environment:
     REBOOT: 'false'
-    DEBUG: '1'
+    DEBUG: 'false'
   register: reset_output
   ignore_errors: true
