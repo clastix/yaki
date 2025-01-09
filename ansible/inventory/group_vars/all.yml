@@ -4,7 +4,6 @@ ansible_user: clastix
 arch: amd64
 helm_version: v3.15.2
 flux_version: v2.3.0
-clusterctl_version: v1.9.3
 
 # etcd
 etcd_version: v3.5.15
@@ -17,7 +16,7 @@ etcd_metrics_port: 2381
 # kubernetes
 kubernetes_version: v1.30.5
 kubernetes_cert_dir: /etc/kubernetes/pki
-cluster_name: buildio
+cluster_name: kubernetes
 cluster_domain: labs.clastix.io
 pod_cidr: 10.36.0.0/16
 svc_cidr: 10.96.0.0/16
