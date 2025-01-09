@@ -1,0 +1,6 @@
+- name: Install clusterctl
+  ansible.builtin.get_url:
+    url: "https://github.com/kubernetes-sigs/cluster-api/releases/download/{{ clusterctl_version }}/clusterctl-linux-{{ arch }}"
+    dest: /usr/local/bin/clusterctl
+    mode: '0755'
+  delegate_to: localhost

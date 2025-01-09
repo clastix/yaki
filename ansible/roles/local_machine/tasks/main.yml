@@ -18,6 +18,11 @@
   block:
   - import_tasks: helm.yml
 
+- name: Install clusterctl
+  become: true
+  block:
+  - import_tasks: clusterctl.yml
+
 - name: Install flux
   become: true
   block:
