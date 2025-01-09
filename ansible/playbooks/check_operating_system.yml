@@ -1,0 +1,148 @@
+---
+- name: Ensure required binaries are installed
+  hosts: all
+  become: true
+  tasks:
+    - name: Check if conntrack is installed
+      command: which conntrack
+      register: conntrack_result
+      failed_when: conntrack_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install conntrack if missing
+      apt:
+        name: conntrack
+        state: present
+      when: conntrack_result.rc == 1
+
+    - name: Check if socat is installed
+      command: which socat
+      register: socat_result
+      failed_when: socat_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install socat if missing
+      apt:
+        name: socat
+        state: present
+      when: socat_result.rc == 1
+
+    - name: Check if ip is installed
+      command: which ip
+      register: ip_result
+      failed_when: ip_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install iproute2 if ip is missing
+      apt:
+        name: iproute2
+        state: present
+      when: ip_result.rc == 1
+
+    - name: Check if iptables is installed
+      command: which iptables
+      register: iptables_result
+      failed_when: iptables_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install iptables if missing
+      apt:
+        name: iptables
+        state: present
+      when: iptables_result.rc == 1
+
+    - name: Check if modprobe is installed
+      command: which modprobe
+      register: modprobe_result
+      failed_when: modprobe_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install kmod if modprobe is missing
+      apt:
+        name: kmod
+        state: present
+      when: modprobe_result.rc == 1
+
+    - name: Check if sysctl is installed
+      command: which sysctl
+      register: sysctl_result
+      failed_when: sysctl_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install procps if sysctl is missing
+      apt:
+        name: procps
+        state: present
+      when: sysctl_result.rc == 1
+
+    - name: Check if ebtables is installed
+      command: which ebtables
+      register: ebtables_result
+      failed_when: ebtables_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install ebtables if missing
+      apt:
+        name: ebtables
+        state: present
+      when: ebtables_result.rc == 1
+
+    - name: Check if ethtool is installed
+      command: which ethtool
+      register: ethtool_result
+      failed_when: ethtool_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install ethtool if missing
+      apt:
+        name: ethtool
+        state: present
+      when: ethtool_result.rc == 1
+
+    - name: Check if wget is installed
+      command: which wget
+      register: wget_result
+      failed_when: wget_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install wget if missing
+      apt:
+        name: wget
+        state: present
+      when: wget_result.rc == 1
+
+    - name: Check if curl is installed
+      command: which curl
+      register: curl_result
+      failed_when: curl_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install curl if missing
+      apt:
+        name: curl
+        state: present
+      when: curl_result.rc == 1
+
+    - name: Check if ping is installed
+      command: which ping
+      register: ping_result
+      failed_when: ping_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install iputils-ping if ping is missing
+      apt:
+        name: iputils-ping
+        state: present
+      when: ping_result.rc == 1
+
+    - name: Check if vi is installed
+      command: which vi
+      register: vi_result
+      failed_when: vi_result.rc not in [0, 1]
+      changed_when: false
+
+    - name: Install vim if vi is missing
+      apt:
+        name: vim
+        state: present
+      when: vi_result.rc == 1
