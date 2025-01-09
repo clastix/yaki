@@ -36,3 +36,12 @@ crictl_version: v1.29.0
 bin_dir: /usr/local/bin
 sbin_dir: /usr/local/sbin
 
+# gitops
+flux: enabled
+gitProvider: github # options are github, gitlab or git
+owner: "clastix"
+repository: "template-kamaji-setup"
+private: "true"
+branch: "master"
+namespace: "flux-system"
+path: "clusters/kamaji"
