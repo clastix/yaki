@@ -10,7 +10,7 @@
     - init
     - taint
     - cni_plugin
-    - flux_bootstrap
+
 
 
 
