@@ -9,33 +9,23 @@
         - flux == 'enabled'
       fail_msg: "Flux is not enabled. Skipping Flux bootstrap."
 
-  - name: Validate gitProvider
-    assert:
-      that:
-        - gitProvider in ['github', 'gitlab', 'git']
-      fail_msg: "Invalid gitProvider. Must be one of: github, gitlab, git."
-
   - name: Check if flux command is available
     command: which flux
     register: flux_command
     failed_when: flux_command.rc != 0
     changed_when: false
 
-  # To bootstrap Flux, it is required that the person running the playbook to be
-  # the owner of the GitLab project, or to have admin rights of a GitLab group.
   - name: Bootstrap Flux ... it can take up to 60 sec.
     command: >
-      flux bootstrap {{ gitProvider }}
-      --namespace=flux-system
-      --token-auth
-      --owner={{ owner }}
-      --repository={{ repository }}
+      flux bootstrap git
+      --url={{ git_url }}
       --branch={{ branch }}
       --path={{ path | default('clusters/kamaji') }}
-    when:
-      - flux == 'enabled'
-      - gitProvider in ['github', 'gitlab', 'git']
-    environment:
-      GITHUB_TOKEN: "{{ lookup('env', 'GITHUB_TOKEN') }}"
-      GITLAB_TOKEN: "{{ lookup('env', 'GITLAB_TOKEN') }}"
+      --token-auth=true
+      --username={{ username }}
+      --password={{ password }}
+      {% if allow_insecure_http == 'true' %}
+      --allow-insecure-http
+      {% endif %}
+
 
