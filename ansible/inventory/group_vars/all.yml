@@ -16,7 +16,7 @@ etcd_metrics_port: 2381
 # kubernetes
 kubernetes_version: v1.30.5
 kubernetes_cert_dir: /etc/kubernetes/pki
-cluster_name: kubernetes
+cluster_name: bsctl
 cluster_domain: labs.clastix.io
 pod_cidr: 10.36.0.0/16
 svc_cidr: 10.96.0.0/16
@@ -37,11 +37,18 @@ bin_dir: /usr/local/bin
 sbin_dir: /usr/local/sbin
 
 # gitops
+# Configuration for GitOps using Flux
 flux: enabled
-gitProvider: github # options are github, gitlab or git
-owner: "clastix"
-repository: "template-kamaji-setup"
-private: "true"
+# The URL of the Git repository to be used for GitOps
+git_url: "https://github.com/clastix/template-kamaji-setup.git"
+# Set to "true" if you want to use straight HTTP instead of HTTPS for Git operations
+allow_insecure_http: "false"
+# The username for accessing the Git repository
+username: "bsctl" # Replace with your Git username
+# The password for accessing the Git repository, retrieved from the environment variable TOKEN
+# Ensure TOKEN is set in your environment, e.g., export TOKEN=your_token
+password: "{{ lookup('env', 'TOKEN') }}"
+# The branch of the Git repository to be used
 branch: "master"
-namespace: "flux-system"
+# The path within the Git repository where the configuration files are located
 path: "clusters/kamaji"
