@@ -45,12 +45,16 @@ Commands:
   join: Join a control plane node to the cluster
     - This command joins the node as control plane to an existing Kubernetes cluster.
     - It also installs all necessary prerequisites, container runtime, CNI plugins, and Kubernetes binaries.
-    - Requires: JOIN_URL, JOIN_TOKEN, JOIN_TOKEN_CACERT_HASH, JOIN_ASCP, KUBERNETES_VERSION (optional)
+    - Requires: JOIN_URL, JOIN_TOKEN, JOIN_TOKEN_CACERT_HASH (optional), JOIN_ASCP, KUBERNETES_VERSION (optional)
+    - If JOIN_TOKEN_CACERT_HASH is provided, it will be used for secure join.
+    - If JOIN_TOKEN_CACERT_HASH is not provided, it will join using --discovery-token-unsafe-skip-ca-verification.
     - Example: JOIN_URL=<control-plane-endpoint>:<port> JOIN_TOKEN=<token> JOIN_TOKEN_CERT_KEY=<key> JOIN_TOKEN_CACERT_HASH=sha256:<hash> JOIN_ASCP=true KUBERNETES_VERSION=v1.30.5 yaki join
 
   join: Join a node to the cluster
     - This command joins the node to an existing Kubernetes cluster.
-    - Requires: JOIN_URL, JOIN_TOKEN, JOIN_TOKEN_CACERT_HASH, KUBERNETES_VERSION (optional)
+    - Requires: JOIN_URL, JOIN_TOKEN, JOIN_TOKEN_CACERT_HASH (optional), KUBERNETES_VERSION (optional)
+    - If JOIN_TOKEN_CACERT_HASH is provided, it will be used for secure join.
+    - If JOIN_TOKEN_CACERT_HASH is not provided, it will join using --discovery-token-unsafe-skip-ca-verification.
     - Example: JOIN_URL=<control-plane-endpoint>:<port> JOIN_TOKEN=<token> JOIN_TOKEN_CACERT_HASH=sha256:<hash> KUBERNETES_VERSION=v1.30.5 yaki join
 
   reset: Reset the node
@@ -272,27 +276,25 @@ init_cluster() {
 # Join node to Kubernetes cluster
 join_node() {
     # Ensure required parameters are set
-    # Check if JOIN_URL is set, if not, terminate with an error message
     [ -z "${JOIN_URL}" ] && fatal "JOIN_URL is not set"
-    # Check if JOIN_TOKEN is set, if not, terminate with an error message
     [ -z "${JOIN_TOKEN}" ] && fatal "JOIN_TOKEN is not set"
-    # Check if JOIN_TOKEN_CACERT_HASH is set, if not, terminate with an error message
-    [ -z "${JOIN_TOKEN_CACERT_HASH}" ] && fatal "JOIN_TOKEN_CACERT_HASH is not set"
 
     info "Joining the node to the cluster"
-    # Construct the initial kubeadm join arguments
-    local KUBEADM_ARGS="${JOIN_URL} --token ${JOIN_TOKEN} --discovery-token-ca-cert-hash ${JOIN_TOKEN_CACERT_HASH}"
+
+    # Check if JOIN_TOKEN_CACERT_HASH is provided and not empty
+    if [ -n "${JOIN_TOKEN_CACERT_HASH}" ]; then
+        local KUBEADM_ARGS="${JOIN_URL} --token ${JOIN_TOKEN} --discovery-token-ca-cert-hash ${JOIN_TOKEN_CACERT_HASH}"
+    else
+        local KUBEADM_ARGS="${JOIN_URL} --token ${JOIN_TOKEN} --discovery-token-unsafe-skip-ca-verification"
+    fi
 
     # If the node is joining as control plane, add control plane specific arguments
     if [ "${JOIN_ASCP}" = true ]; then
-        # Check if JOIN_TOKEN_CERT_KEY is set, if not, terminate with an error message
         [ -z "${JOIN_TOKEN_CERT_KEY}" ] && fatal "JOIN_TOKEN_CERT_KEY is not set for control plane join"
-        # Append control plane specific arguments to KUBEADM_ARGS
         KUBEADM_ARGS="${KUBEADM_ARGS} --control-plane --certificate-key ${JOIN_TOKEN_CERT_KEY}"
     fi
 
     # If KUBEADM_CONFIG is provided, use it
-    # Check if the KUBEADM_CONFIG file exists, if so, use it for kubeadm join
     [ -f "${KUBEADM_CONFIG}" ] && KUBEADM_ARGS="--config ${KUBEADM_CONFIG}"
 
     # Execute kubeadm join with the constructed arguments and any additional verbosity flags
