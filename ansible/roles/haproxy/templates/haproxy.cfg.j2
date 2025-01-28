@@ -31,7 +31,7 @@ defaults
 
 # Frontend configuration
 frontend control_plane
-    bind :{{ control_plane_port }}
+    bind :{{ control_plane_lb_port }}
     mode tcp
     option tcplog
     default_backend control_plane_servers
