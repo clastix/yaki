@@ -18,6 +18,7 @@ kubernetes_version: v1.31.2
 kubernetes_cert_dir: /etc/kubernetes/pki
 cluster_name: kamaji
 cluster_domain: labs.clastix.io
+node_fqdn: false # Set to true if you want to use the FQDN for the node name
 pod_cidr: 10.36.0.0/16
 svc_cidr: 10.96.0.0/16
 dns_domain: cluster.local
