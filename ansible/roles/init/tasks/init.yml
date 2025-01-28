@@ -1,5 +1,5 @@
 ---
-- name: Initialize kubeadm on seed node
+- name: Initialize kubeadm on seed node ... it can take a while.
   shell: |
     curl -sfL https://goyaki.clastix.io | bash -s init
   become: true

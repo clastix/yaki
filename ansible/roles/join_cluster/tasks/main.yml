@@ -40,7 +40,7 @@
   delegate_to: localhost
   run_once: true
 
-- name: Join worker nodes
+- name: Join worker nodes ... it can take a while.
   shell: |
     curl -sfL https://goyaki.clastix.io | bash -s join
   become: true

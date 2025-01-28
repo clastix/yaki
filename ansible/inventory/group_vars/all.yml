@@ -24,7 +24,7 @@ dns_domain: cluster.local
 dns_service: 10.96.0.10
 control_plane_endpoint: 10.10.10.250
 control_plane_port: 6443
-control_plane_lb: true # Set to true if you want to use an embedded load balancer for the control plane
+control_plane_lb: false # Set to true if you want to use an embedded load balancer for the control plane
 control_plane_lb_port: 8443 # The port on which the internal control plane load balancer listens
 control_plane_interface: eth0
 coredns_version: v1.9.3
@@ -42,11 +42,11 @@ sbin_dir: /usr/local/sbin
 # Configuration for GitOps using Flux
 flux: enabled
 # The URL of the Git repository to be used for GitOps
-git_url: "https://github.com/clastix/template-kamaji-setup.git"
+git_url: "https://github.com/organization/template-kamaji-setup"
 # Set to "true" if you want to use straight HTTP instead of HTTPS for Git operations
 allow_insecure_http: false
 # The username for accessing the Git repository
-username: "clastix" # Replace with your Git username
+username: "username" # Replace with your Git username
 # The password for accessing the Git repository, retrieved from the environment variable TOKEN
 # Ensure TOKEN is set in your environment, e.g., export TOKEN=your_token
 password: "{{ lookup('env', 'TOKEN') }}"

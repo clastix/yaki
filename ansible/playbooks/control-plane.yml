@@ -12,6 +12,11 @@
   - role: taint
   - role: cni_plugin
 
+- name: Fetch kubeconfig
+  hosts: localhost
+  roles:
+  - role: kubeconfig
+
 
 
 

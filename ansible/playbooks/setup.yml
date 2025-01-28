@@ -1,4 +1,0 @@
----
-- import_playbook: setup_local_machine.yml
-- import_playbook: control_plane.yml
-- import_playbook: join_worker_node.yml

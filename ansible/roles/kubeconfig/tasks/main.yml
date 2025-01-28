@@ -1,0 +1,33 @@
+---
+- name: Set seed node to the first control plane node
+  set_fact:
+    seed_node: "{{ groups['control_plane'][0] }}"
+  run_once: true
+
+- name: Ensure .kube directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+    mode: '0755'
+
+- name: Copy admin.conf from seed node to local machine
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ ansible_env.HOME }}/.kube/config"
+    flat: yes
+  delegate_to: "{{ seed_node }}"
+  become: true
+
+- name: Set control plane endpoint port
+  set_fact:
+    port: "{{ control_plane_lb_port if control_plane_lb | default(false) else control_plane_port }}"
+  run_once: true
+
+- name: Update kubeconfig server string using kubectl
+  command: >
+    kubectl config set-cluster kamaji
+    --server=https://{{ cluster_name }}.{{ cluster_domain }}:{{ port }}
+  environment:
+    KUBECONFIG: "{{ ansible_env.HOME }}/.kube/config"
+  delegate_to: localhost
+  become: false

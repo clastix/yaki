@@ -1,5 +1,5 @@
 ---
-- name: Remove Kubernetes cluster from all machines
+- name: Remove Kubernetes cluster from all machines ... it can take a while.
   shell: |
     curl -sfL https://goyaki.clastix.io | bash -sx -s reset
   become: true
