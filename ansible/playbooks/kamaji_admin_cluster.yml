@@ -5,11 +5,12 @@
   become_method: sudo
   become_user: root
   roles:
-    - keepalived
-    - haproxy
-    - init
-    - taint
-    - cni_plugin
+  - role: keepalived
+  - role: haproxy
+    when: (control_plane_lb | default(false))
+  - role: init
+  - role: taint
+  - role: cni_plugin
 
 
 

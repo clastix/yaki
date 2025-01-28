@@ -10,7 +10,7 @@ bootstrapTokens:
   - authentication
 localAPIEndpoint:
   advertiseAddress: "0.0.0.0"
-  bindPort: 6443
+  bindPort: {{ control_plane_port }}
 nodeRegistration:
   criSocket: unix:///run/containerd/containerd.sock
 ---
@@ -26,7 +26,7 @@ networking:
 dns:
   imageRepository: registry.k8s.io/coredns
   imageTag: "{{ coredns_version }}"
-controlPlaneEndpoint: "{{ control_plane_endpoint }}:{{ control_plane_port }}"
+controlPlaneEndpoint: "{{ control_plane_endpoint }}:{{ control_plane_endpoint_port }}"
 kubernetesVersion: "{{ kubernetes_version }}"
 etcd:
   local:

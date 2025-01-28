@@ -8,3 +8,33 @@
     DEBUG: 'false'
   register: reset_output
   ignore_errors: true
+
+- name: Stop and disable keepalived service
+  become: true
+  systemd:
+    name: keepalived
+    state: stopped
+    enabled: no
+  ignore_errors: true
+
+- name: Remove keepalived package
+  become: true
+  apt:
+    name: keepalived
+    state: absent
+  ignore_errors: true
+
+- name: Stop and disable haproxy service
+  become: true
+  systemd:
+    name: haproxy
+    state: stopped
+    enabled: no
+  ignore_errors: true
+
+- name: Remove haproxy package
+  become: true
+  apt:
+    name: haproxy
+    state: absent
+  ignore_errors: true

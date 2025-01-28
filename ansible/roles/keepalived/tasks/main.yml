@@ -1,30 +1,36 @@
 ---
-
 - name: Install keepalived package
   become: true
   block:
-    - name: Update apt cache
-      apt:
-        update_cache: yes
+  - name: Update apt cache
+    apt:
+      update_cache: yes
 
-    - name: Install keepalived package
-      apt:
-        name: keepalived
-        state: present
+  - name: Install keepalived package
+    apt:
+      name: keepalived
+      state: present
+
+- name: Calculate node priority
+  set_fact:
+    node_priority: "{{ 100 + (groups['control_plane'].index(inventory_hostname) | int) }}"
+
+- name: Set keepalived template
+  set_fact:
+    keepalived_template: "{{ 'keepalived_lb.conf.j2' if (control_plane_lb | default(false)) else 'keepalived.conf.j2' }}"
 
 - name: Configure, start and enable keepalived service
   become: true
   block:
   - name: Load keepalived configuration from template
     template:
-      src: keepalived.conf.j2
+      src: "{{ keepalived_template }}"
       dest: /etc/keepalived/keepalived.conf
       mode: '0644'
 
-- name: Enable and start keepalived service
-  become: true
-  systemd:
-    name: keepalived
-    enabled: yes
-    state: restarted
-    daemon_reload: yes
+  - name: Enable and start keepalived service
+    systemd:
+      name: keepalived
+      enabled: yes
+      state: restarted
+      daemon_reload: yes

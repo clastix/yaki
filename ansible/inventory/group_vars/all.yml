@@ -14,16 +14,18 @@ etcd_peer_port: 2380
 etcd_metrics_port: 2381   
 
 # kubernetes
-kubernetes_version: v1.30.5
+kubernetes_version: v1.31.2
 kubernetes_cert_dir: /etc/kubernetes/pki
-cluster_name: bsctl
+cluster_name: kamaji
 cluster_domain: labs.clastix.io
 pod_cidr: 10.36.0.0/16
 svc_cidr: 10.96.0.0/16
 dns_domain: cluster.local
 dns_service: 10.96.0.10
-control_plane_endpoint: 192.168.30.200
-control_plane_port: 443
+control_plane_endpoint: 10.10.10.250
+control_plane_port: 6443
+control_plane_lb: true # Set to true if you want to use an embedded load balancer for the control plane
+control_plane_lb_port: 8443 # The port on which the internal control plane load balancer listens
 control_plane_interface: eth0
 coredns_version: v1.9.3
 calico_version: v3.29.1
@@ -42,9 +44,9 @@ flux: enabled
 # The URL of the Git repository to be used for GitOps
 git_url: "https://github.com/clastix/template-kamaji-setup.git"
 # Set to "true" if you want to use straight HTTP instead of HTTPS for Git operations
-allow_insecure_http: "false"
+allow_insecure_http: false
 # The username for accessing the Git repository
-username: "bsctl" # Replace with your Git username
+username: "clastix" # Replace with your Git username
 # The password for accessing the Git repository, retrieved from the environment variable TOKEN
 # Ensure TOKEN is set in your environment, e.g., export TOKEN=your_token
 password: "{{ lookup('env', 'TOKEN') }}"
