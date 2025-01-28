@@ -1,5 +1,4 @@
 ---
-
 - name: Join Worker Node 
   hosts: worker
   become: true

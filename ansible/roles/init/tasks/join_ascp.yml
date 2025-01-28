@@ -31,7 +31,7 @@
   delegate_to: localhost
   run_once: true
 
-- name: Join other control plane nodes
+- name: Join other control plane nodes ... it can take a while.
   shell: |
     curl -sfL https://goyaki.clastix.io | bash -s join
   become: true

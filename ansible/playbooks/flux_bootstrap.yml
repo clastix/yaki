@@ -15,7 +15,7 @@
     failed_when: flux_command.rc != 0
     changed_when: false
 
-  - name: Bootstrap Flux ... it can take up to 60 sec.
+  - name: Bootstrap Flux ... it can take a while.
     command: >
       flux bootstrap git
       --url={{ git_url }}
