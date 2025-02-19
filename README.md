@@ -113,7 +113,7 @@ Commands:
     - This command joins the node as control plane to an existing Kubernetes cluster.
     - It also installs all necessary prerequisites, container runtime, CNI plugins, and Kubernetes binaries.
     - Requires: JOIN_URL, JOIN_TOKEN, JOIN_TOKEN_CACERT_HASH, JOIN_ASCP, KUBERNETES_VERSION (optional)
-    - Example: JOIN_URL=<control-plane-endpoint>:<port> JOIN_TOKEN=<token> JOIN_TOKEN_CERT_KEY=<key> JOIN_TOKEN_CACERT_HASH=sha256:<hash> JOIN_ASCP=1 KUBERNETES_VERSION=v1.30.5 yaki join
+    - Example: JOIN_URL=<control-plane-endpoint>:<port> JOIN_TOKEN=<token> JOIN_TOKEN_CERT_KEY=<key> JOIN_TOKEN_CACERT_HASH=sha256:<hash> JOIN_ASCP=true KUBERNETES_VERSION=v1.30.5 yaki join
 
   join: Join a node to the cluster
     - This command joins the node to an existing Kubernetes cluster.
@@ -145,8 +145,8 @@ Environment variables:
   | JOIN_TOKEN_CACERT_HASH  | Token Certificate Authority hash to join the control-plane. | Not set    |
   | JOIN_TOKEN_CERT_KEY     | Token Certificate Key to join the control-plane.            | Not set    |
   | JOIN_URL                | URL to join the control-plane.                              | Not set    |
-  | JOIN_ASCP               | Switch to join either as control plane or worker.           | 0          |
-  | DEBUG                   | Set to 1 for more verbosity during script execution.        | 0          |
+  | JOIN_ASCP               | Switch to join either as control plane or worker.           | false      |
+  | DEBUG                   | Set to 1 for more verbosity during script execution.        | false      |
   +-------------------------+-------------------------------------------------------------+------------+
 ```
 

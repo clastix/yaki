@@ -423,7 +423,7 @@ Join the remaining control plane nodes:
 MASTERS=(${MASTER1} ${MASTER2})
 for i in "${!MASTERS[@]}"; do
   MASTER=${MASTERS[$i]}
-  ssh ${USER}@${MASTER} 'sudo env JOIN_URL='${JOIN_URL}' env JOIN_TOKEN='${JOIN_TOKEN}' env JOIN_TOKEN_CERT_KEY='${JOIN_TOKEN_CERT_KEY}' env JOIN_TOKEN_CACERT_HASH='sha256:${JOIN_TOKEN_CACERT_HASH}' env JOIN_ASCP=1 bash -s' -- < yaki join;
+  ssh ${USER}@${MASTER} 'sudo env JOIN_URL='${JOIN_URL}' env JOIN_TOKEN='${JOIN_TOKEN}' env JOIN_TOKEN_CERT_KEY='${JOIN_TOKEN_CERT_KEY}' env JOIN_TOKEN_CACERT_HASH='sha256:${JOIN_TOKEN_CACERT_HASH}' env JOIN_ASCP=true bash -s' -- < yaki join;
 done
 ```
 
