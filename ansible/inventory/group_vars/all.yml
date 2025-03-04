@@ -30,6 +30,7 @@ control_plane_lb_port: 8443 # The port on which the internal control plane load 
 control_plane_interface: eth0
 coredns_version: v1.9.3
 calico_version: v3.29.1
+clusterctl_version: v1.9.5
 
 # container runtime
 containerd_version: v1.7.16
