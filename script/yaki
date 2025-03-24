@@ -223,6 +223,9 @@ install_kube_binaries() {
     chmod +x {kubeadm,kubelet}
     mv {kubeadm,kubelet} ${BIN_DIR}
 
+    # Create folder for static pod manifests. See https://github.com/clastix/yaki/issues/32
+    mkdir -p /etc/kubernetes/manifests
+
     # Install kubelet service
     local RELEASE_VERSION="v0.16.2" # Release version of kubelet systemd service
     wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /usr/lib/systemd/system/kubelet.service
