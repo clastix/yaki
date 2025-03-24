@@ -16,10 +16,10 @@ COMMAND=$1
 
 # Define global compatibility matrix
 declare -A versions=(
-    ["containerd"]="v1.7.16"
-    ["runc"]="v1.1.11"
-    ["cni"]="v1.4.0"
-    ["crictl"]="v1.29.0"
+    ["containerd"]="v1.7.24"
+    ["runc"]="v1.2.6"
+    ["cni"]="v1.6.2"
+    ["crictl"]="v1.32.0"
 )
 
 # Helper function to display usage information
@@ -71,10 +71,10 @@ Environment variables:
   +-------------------------+-------------------------------------------------------------+------------+
   | Variable                | Description                                                 | Default    |
   +-------------------------+-------------------------------------------------------------+------------+
-  | KUBERNETES_VERSION      | Version of kubernetes to install.                           | v1.30.5    |
-  | CONTAINERD_VERSION      | Version of container runtime containerd.                    | see matrix |
-  | RUNC_VERSION            | Version of runc to install.                                 | see matrix |
-  | CNI_VERSION             | Version of CNI plugins to install.                          | see matrix |
+  | KUBERNETES_VERSION      | Version of kubernetes to install.                           | v1.32.3    |
+  | CONTAINERD_VERSION      | Version of container runtime containerd.                    | v1.7.24    |
+  | RUNC_VERSION            | Version of runc to install.                                 | v1.2.6     |
+  | CNI_VERSION             | Version of CNI plugins to install.                          | v1.6.2     |
   | CRICTL_VERSION          | Version of crictl to install.                               | see matrix |
   | KUBEADM_CONFIG          | Path to the kubeadm config file to use.                     | Not set    |
   | ADVERTISE_ADDRESS       | Address to advertise for the api-server.                    | 0.0.0.0    |
@@ -116,7 +116,7 @@ setup_env() {
     # Check if running as root
     [ "$(id -u)" -eq 0 ] || fatal "You need to be root to perform this install"
     # Set default values
-    KUBERNETES_VERSION=${KUBERNETES_VERSION:-v1.30.5}
+    KUBERNETES_VERSION=${KUBERNETES_VERSION:-v1.32.3}
     JOIN_ASCP=${JOIN_ASCP:-false}
     CONTAINERD_VERSION=${CONTAINERD_VERSION:-$(get_version "containerd")}
     RUNC_VERSION=${RUNC_VERSION:-$(get_version "runc")}
