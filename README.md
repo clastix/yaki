@@ -90,64 +90,10 @@ kubectl apply -f <add-on.yaml>
 
 ## Documentation
 
-The `yaki` tool is self-documented:
+The `yaki` tool is self-documented, just run
 
 ```bash
 $ curl -sfL https://goyaki.clastix.io | sudo bash -s help
-Usage:
-
-  ENV=... yaki.bash <init|join|reset|help>
-    or
-  curl -sfL https://goyaki.clastix.io | ENV=... bash -s <init|join|reset|help>
-
-Commands:
-
-  init: Deploy the first control-plane node of the Kubernetes cluster
-    - This command initializes the Kubernetes control-plane on the first node.
-    - Requires: JOIN_URL (optional), KUBEADM_CONFIG (optional), ADVERTISE_ADDRESS(optional), BIND_PORT (optional), KUBERNETES_VERSION (optional)
-    - Example: KUBERNETES_VERSION=v1.30.5 yaki init
-    - Example: JOIN_URL=<control-plane-endpoint>:<port> KUBERNETES_VERSION=v1.30.5 yaki init
-    - Example: KUBEADM_CONFIG=kubeadm-config.yaml KUBERNETES_VERSION=v1.30.5 yaki init
-
-  join: Join a control plane node to the cluster
-    - This command joins the node as control plane to an existing Kubernetes cluster.
-    - It also installs all necessary prerequisites, container runtime, CNI plugins, and Kubernetes binaries.
-    - Requires: JOIN_URL, JOIN_TOKEN, JOIN_TOKEN_CACERT_HASH, JOIN_ASCP, KUBERNETES_VERSION (optional)
-    - Example: JOIN_URL=<control-plane-endpoint>:<port> JOIN_TOKEN=<token> JOIN_TOKEN_CERT_KEY=<key> JOIN_TOKEN_CACERT_HASH=sha256:<hash> JOIN_ASCP=true KUBERNETES_VERSION=v1.30.5 yaki join
-
-  join: Join a node to the cluster
-    - This command joins the node to an existing Kubernetes cluster.
-    - Requires: JOIN_URL, JOIN_TOKEN, JOIN_TOKEN_CACERT_HASH, KUBERNETES_VERSION (optional)
-    - Example: JOIN_URL=<control-plane-endpoint>:<port> JOIN_TOKEN=<token> JOIN_TOKEN_CACERT_HASH=sha256:<hash> KUBERNETES_VERSION=v1.30.5 yaki join
-
-  reset: Reset the node
-    - This command removes all Kubernetes components and configurations from the node.
-    - Example: yaki reset
-
-  help: Print this help
-    - Displays this help message.
-    - Example: yaki help
-
-Environment variables:
-
-  +-------------------------+-------------------------------------------------------------+------------+
-  | Variable                | Description                                                 | Default    |
-  +-------------------------+-------------------------------------------------------------+------------+
-  | KUBERNETES_VERSION      | Version of kubernetes to install.                           | v1.30.5    |
-  | CONTAINERD_VERSION      | Version of container runtime containerd.                    | see matrix |
-  | RUNC_VERSION            | Version of runc to install.                                 | see matrix |
-  | CNI_VERSION             | Version of CNI plugins to install.                          | see matrix |
-  | CRICTL_VERSION          | Version of crictl to install.                               | see matrix |
-  | KUBEADM_CONFIG          | Path to the kubeadm config file to use.                     | Not set    |
-  | ADVERTISE_ADDRESS       | Address to advertise for the api-server.                    | 0.0.0.0    |
-  | BIND_PORT               | Port to use for the api-server.                             | 6443       |
-  | JOIN_TOKEN              | Token to join the control-plane.                            | Not set    |
-  | JOIN_TOKEN_CACERT_HASH  | Token Certificate Authority hash to join the control-plane. | Not set    |
-  | JOIN_TOKEN_CERT_KEY     | Token Certificate Key to join the control-plane.            | Not set    |
-  | JOIN_URL                | URL to join the control-plane.                              | Not set    |
-  | JOIN_ASCP               | Switch to join either as control plane or worker.           | false      |
-  | DEBUG                   | Set to 1 for more verbosity during script execution.        | false      |
-  +-------------------------+-------------------------------------------------------------+------------+
 ```
 
 ## Advanced Usage
