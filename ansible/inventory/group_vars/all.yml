@@ -47,6 +47,8 @@ flux: enabled
 git_url: "https://github.com/organization/template-kamaji-setup"
 # Set to "true" if you want to use straight HTTP instead of HTTPS for Git operations
 allow_insecure_http: false
+# The path to the CA certificate file for Git operations
+# ca_file: /etc/ssl/certs/ca-certificates.crt
 # The username for accessing the Git repository
 username: "username" # Replace with your Git username
 # The password for accessing the Git repository, retrieved from the environment variable TOKEN
