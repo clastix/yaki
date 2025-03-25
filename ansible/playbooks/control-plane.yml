@@ -5,6 +5,7 @@
   become_method: sudo
   become_user: root
   roles:
+  - role: inotify
   - role: keepalived
   - role: haproxy
     when: (control_plane_lb | default(false))

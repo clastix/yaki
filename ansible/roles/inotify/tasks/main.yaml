@@ -1,0 +1,18 @@
+---
+- name: Ensure fs.inotify.max_user_instances is set
+  lineinfile:
+    path: /etc/sysctl.conf
+    regexp: '^fs.inotify.max_user_instances'
+    line: 'fs.inotify.max_user_instances=8192'
+    state: present
+
+- name: Ensure fs.inotify.max_user_watches is set
+  lineinfile:
+    path: /etc/sysctl.conf
+    regexp: '^fs.inotify.max_user_watches'
+    line: 'fs.inotify.max_user_watches=524288'
+    state: present
+
+- name: Apply sysctl settings
+  command: sysctl -p
+  become: true

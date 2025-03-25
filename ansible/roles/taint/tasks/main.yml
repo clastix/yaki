@@ -1,6 +1,6 @@
 - name: Check if nodes are registerd with fqdn or hostname
   set_fact:
-    node_name: "{{ ansible_fqdn if node_fqdn | default(false) else ansible_hostname }}"
+    node_name: "{{ ansible_fqdn if node_fqdn else ansible_hostname }}"
 
 - name: Untaint control plane node if schedulable
   command: kubectl taint nodes {{ node_name }} node-role.kubernetes.io/control-plane:NoSchedule- --kubeconfig /etc/kubernetes/admin.conf
