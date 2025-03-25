@@ -1,4 +1,4 @@
-apiVersion: kubeadm.k8s.io/v1beta3
+apiVersion: kubeadm.k8s.io/v1beta4
 kind: InitConfiguration
 bootstrapTokens:
 - groups:
@@ -13,8 +13,21 @@ localAPIEndpoint:
   bindPort: {{ control_plane_port }}
 nodeRegistration:
   criSocket: unix:///run/containerd/containerd.sock
+  imagePullPolicy: IfNotPresent
+  imagePullSerial: true
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+timeouts:
+  controlPlaneComponentHealthCheck: 4m0s
+  discovery: 5m0s
+  etcdAPICall: 2m0s
+  kubeletHealthCheck: 4m0s
+  kubernetesAPICall: 1m0s
+  tlsBootstrap: 5m0s
+  upgradeManifests: 5m0s
 ---
-apiVersion: kubeadm.k8s.io/v1beta3
+apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
 clusterName: "{{ cluster_name }}"
 certificatesDir: "{{ kubernetes_cert_dir }}"
@@ -32,16 +45,24 @@ etcd:
   local:
     dataDir: "{{ etcd_data_dir }}"
 apiServer:
+  extraArgs:
+  - name: kubelet-preferred-address-types
+    value: InternalIP
   certSANs:
   - localhost
   - "{{ control_plane_endpoint }}"
   - "{{ cluster_name }}.{{ cluster_domain }}"
-scheduler:
-  extraArgs:
-    bind-address: "0.0.0.0" # required to expose metrics
+caCertificateValidityPeriod: 87600h0m0s
+certificateValidityPeriod: 8760h0m0s
 controllerManager:
   extraArgs:
-    bind-address: "0.0.0.0" # required to expose metrics
+  - name: bind-address
+    value: 0.0.0.0
+scheduler:
+  extraArgs:
+  - name: bind-address
+    value: 0.0.0.0
+encryptionAlgorithm: RSA-2048
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration

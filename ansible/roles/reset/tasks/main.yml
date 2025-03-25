@@ -31,6 +31,7 @@
     state: stopped
     enabled: no
   ignore_errors: true
+  when: (control_plane_lb | default(false))
 
 - name: Remove haproxy package
   become: true

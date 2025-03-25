@@ -4,8 +4,14 @@
     curl -sfL https://goyaki.clastix.io | bash -s init
   become: true
   environment:
+    DEBUG: "false"
+    KUBERNETES_VERSION: "{{ kubernetes_version }}"
     KUBEADM_CONFIG: /etc/kubernetes/kubeadm-config.yaml
   when: seed is defined and seed | bool
+  register: init_output
 
-
+# - name: Debug init command output
+#   debug:
+#     var: init_output.stdout
+#   when: seed is defined and seed | bool
 
