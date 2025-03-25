@@ -24,6 +24,9 @@
       --token-auth=true
       --username={{ username }}
       --password={{ password }}
+      {% if ca_file is defined %}
+      --ca-file={{ ca_file }}
+      {% endif %}
       {% if allow_insecure_http == 'true' %}
       --allow-insecure-http
       {% endif %}
