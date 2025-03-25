@@ -1,16 +1,16 @@
 [all:children]
 control_plane
-worker
+; worker
 
 [control_plane]
 control_plane-1 ansible_host=10.10.10.10 control_plane_ip=10.10.10.10 schedulable=true seed='true'
 control_plane-2 ansible_host=10.10.10.11 control_plane_ip=10.10.10.11 schedulable=true seed='false'
 control_plane-3 ansible_host=10.10.10.12 control_plane_ip=10.10.10.12 schedulable=true seed='false'
 
-[worker]
-worker-1 ansible_host=10.10.10.13 worker_ip=10.10.10.13
-worker-2 ansible_host=10.10.10.14 worker_ip=10.10.10.14
-worker-3 ansible_host=10.10.10.15 worker_ip=10.10.10.15
+; [worker]
+; worker-1 ansible_host=10.10.10.13 worker_ip=10.10.10.13
+; worker-2 ansible_host=10.10.10.14 worker_ip=10.10.10.14
+; worker-3 ansible_host=10.10.10.15 worker_ip=10.10.10.15
 
 [all:vars]
-ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -W %h:%p -q jumphost"'
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -W %h:%p -q {{ lookup("env", "JUMPHOST") }}"'

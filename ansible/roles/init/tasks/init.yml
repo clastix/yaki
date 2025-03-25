@@ -6,6 +6,10 @@
   environment:
     DEBUG: "false"
     KUBERNETES_VERSION: "{{ kubernetes_version }}"
+    CONTAINERD_VERSION: "{{ containerd_version }}"
+    RUNC_VERSION: "{{ runc_version }}"
+    CNI_VERSION: "{{ cni_version }}"
+    CRICTL_VERSION: "{{ crictl_version }}"
     KUBEADM_CONFIG: /etc/kubernetes/kubeadm-config.yaml
   when: seed is defined and seed | bool
   register: init_output

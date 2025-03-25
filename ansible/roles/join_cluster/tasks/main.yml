@@ -51,6 +51,11 @@
     curl -sfL https://goyaki.clastix.io | bash -s join
   become: true
   environment:
+    DEBUG: "false"
+    CONTAINERD_VERSION: "{{ containerd_version }}"
+    RUNC_VERSION: "{{ runc_version }}"
+    CNI_VERSION: "{{ cni_version }}"
+    CRICTL_VERSION: "{{ crictl_version }}"
     KUBERNETES_VERSION: "{{ kubernetes_version }}"
     JOIN_URL: "{{ join_url }}"
     JOIN_TOKEN: "{{ join_token }}"
