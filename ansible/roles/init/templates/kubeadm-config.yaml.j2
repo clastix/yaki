@@ -52,6 +52,9 @@ apiServer:
   - localhost
   - "{{ control_plane_endpoint }}"
   - "{{ cluster_name }}.{{ cluster_domain }}"
+{% for alias in cluster_name_aliases %}
+  - "{{ alias }}.{{ cluster_domain }}"
+{% endfor %}
 caCertificateValidityPeriod: 87600h0m0s
 certificateValidityPeriod: 8760h0m0s
 controllerManager:
