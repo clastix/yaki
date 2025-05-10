@@ -1,6 +1,10 @@
-- name: Check if nodes are registerd with fqdn or hostname
+- name: Check if nodes are registered with FQDN or hostname
   set_fact:
-    node_name: "{{ ansible_fqdn if node_fqdn else ansible_hostname }}"
+    node_name: "{{ (ansible_fqdn if node_fqdn else ansible_hostname) | lower }}"
+
+- name: Print node_name
+  debug:
+    msg: "Removing taint from {{ node_name }}"
 
 - name: Untaint control plane node if schedulable
   command: kubectl taint nodes {{ node_name }} node-role.kubernetes.io/control-plane:NoSchedule- --kubeconfig /etc/kubernetes/admin.conf

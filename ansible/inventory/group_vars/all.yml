@@ -17,6 +17,7 @@ etcd_metrics_port: 2381
 kubernetes_version: v1.32.3
 kubernetes_cert_dir: /etc/kubernetes/pki
 cluster_name: kamaji
+cluster_name_aliases: [] # List of aliases for the cluster name
 cluster_domain: labs.clastix.io
 node_fqdn: false # Set to true if you want to use the FQDN for the node name
 pod_cidr: 10.36.0.0/16
