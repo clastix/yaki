@@ -27,9 +27,9 @@ helper() {
     cat <<EOF
 Usage:
 
-  ENV=... yaki <init|join|reset|help>
+  ENV=... yaki <init|join|reset|upgrade|help>
     or
-  curl -sfL https://goyaki.clastix.io | ENV=... bash -s <init|join|reset|help>
+  curl -sfL https://goyaki.clastix.io | ENV=... bash -s <init|join|reset|upgrade|help>
 
   You must be sudo to run this script.
 
@@ -56,6 +56,14 @@ Commands:
     - If JOIN_TOKEN_CACERT_HASH is provided, it will be used for secure join.
     - If JOIN_TOKEN_CACERT_HASH is not provided, it will join using --discovery-token-unsafe-skip-ca-verification.
     - Example: JOIN_URL=<control-plane-endpoint>:<port> JOIN_TOKEN=<token> JOIN_TOKEN_CACERT_HASH=sha256:<hash> KUBERNETES_VERSION=v1.30.5 yaki join
+
+  upgrade: Upgrade Kubernetes components to specified version
+    - This command upgrades kubeadm, kubelet, and kubectl to the specified version.
+    - Requires: KUBERNETES_VERSION, APPLY (optional)
+    - If APPLY=true, runs 'kubeadm upgrade apply' (for control plane nodes)
+    - If APPLY is not set or false, runs 'kubeadm upgrade node' (for any node)
+    - Example: KUBERNETES_VERSION=v1.33.0 yaki upgrade
+    - Example: APPLY=true KUBERNETES_VERSION=v1.33.0 yaki upgrade
 
   reset: Reset the node
     - This command removes all Kubernetes components and configurations from the node.
@@ -84,6 +92,7 @@ Environment variables:
   | JOIN_TOKEN_CERT_KEY     | Token Certificate Key to join the control-plane.            | Not set    |
   | JOIN_URL                | URL to join the control-plane.                              | Not set    |
   | JOIN_ASCP               | Switch to join either as control plane or worker.           | false      |
+  | APPLY                   | Run 'kubeadm upgrade apply' when set to true.               | false      |
   | DEBUG                   | Set to true for more verbosity during script execution.     | false      |
   | REBOOT                  | Set to true to reboot the machine after reset.              | false      |
   +-------------------------+-------------------------------------------------------------+------------+
@@ -124,6 +133,7 @@ setup_env() {
     CRICTL_VERSION=${CRICTL_VERSION:-$(get_version "crictl")}
     ADVERTISE_ADDRESS=${ADVERTISE_ADDRESS:-0.0.0.0}
     BIND_PORT=${BIND_PORT:-6443}
+    APPLY=${APPLY:-false}
     REBOOT=${REBOOT:-false}
     DEBUG=${DEBUG:-false}
 }
@@ -216,30 +226,42 @@ EOF
 
 # Install Kubernetes binaries
 install_kube_binaries() {
-    # Install kubeadm, kubelet
-    info "installing kubeadm and kubelet"
-    wget -q --progress=bar https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubeadm
-    wget -q --progress=bar https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubelet
-    chmod +x {kubeadm,kubelet}
-    mv {kubeadm,kubelet} ${BIN_DIR}
-
-    # Create folder for static pod manifests. See https://github.com/clastix/yaki/issues/32
-    mkdir -p /etc/kubernetes/manifests
-
-    # Install kubelet service
-    local RELEASE_VERSION="v0.16.2" # Release version of kubelet systemd service
-    wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /usr/lib/systemd/system/kubelet.service
-    mkdir -p /usr/lib/systemd/system/kubelet.service.d
-    wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
-    systemctl daemon-reload && systemctl enable --now kubelet
-
-    # Install kubectl
-    info "installing kubectl"
-    wget -q --progress=bar https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubectl
-    install -o root -g root -m 0755 kubectl ${BIN_DIR}/kubectl
-    rm -f kubectl  # Cleanup downloaded binary
+   info "create folder for static pod manifests"
+   mkdir -p /etc/kubernetes/manifests
+   install_kubeadm
+   install_kubelet
+   install_kubectl
 }
 
+install_kubeadm() {
+  info "installing kubeadm"
+  wget -q --progress=bar https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubeadm
+  chmod +x kubeadm
+  mv kubeadm ${BIN_DIR}/kubeadm
+}
+
+install_kubelet() {
+  local RELEASE_VERSION="v0.16.2"
+  info "installing kubelet"
+  wget -q --progress=bar https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubelet
+  chmod +x kubelet
+  mv kubelet ${BIN_DIR}/kubelet
+
+  wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /usr/lib/systemd/system/kubelet.service
+  chmod 600 /usr/lib/systemd/system/kubelet.service
+  
+  mkdir -p /usr/lib/systemd/system/kubelet.service.d
+  wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+  systemctl daemon-reload && systemctl enable --now kubelet && systemctl restart kubelet
+}
+
+install_kubectl() {
+  info "installing kubectl"
+  wget -q --progress=bar https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubectl
+  install -o root -g root -m 0755 kubectl ${BIN_DIR}/kubectl
+  rm -f kubectl  # Cleanup downloaded binary
+}
 
 # Initialize Kubernetes cluster
 init_cluster() {
@@ -304,8 +326,20 @@ join_node() {
     kubeadm join ${KUBEADM_ARGS} ${KUBEADM_VERBOSE}
 }
 
+# Apply a Kubernetes version upgrade
+kubeadm_upgrade_apply() {
+    info "Applying Kubernetes upgrade to version ${KUBERNETES_VERSION}"
+    kubeadm upgrade apply ${KUBERNETES_VERSION} --yes
+}
+
+# Function to upgrade a node (control plane or worker)
+kubeadm_upgrade_node() {
+    info "Upgrading Kubernetes node"
+    kubeadm upgrade node
+}
+
 # Remove Kubernetes components
-remove_kube() {
+remove_kube_binaries() {
     info "removing kubernetes components"
     systemctl stop kubelet || true
     kubeadm reset -f || true
@@ -322,8 +356,8 @@ remove_containerd() {
     rm -rf ${SBIN_DIR}/runc ${BIN_DIR}/crictl /etc/crictl.yaml
 }
 
-# Remove binaries and configuration files
-remove_binaries() {
+# Remove other binaries and configuration files
+remove_other_binaries() {
     info "removing side configuration files and binaries"
     rm -rf /etc/cni/net.d /opt/cni/bin /var/lib/cni /var/log/containers /var/log/pods
 }
@@ -365,11 +399,25 @@ do_kube_join() {
     join_node
 }
 
+do_kube_upgrade() {
+    install_kubeadm
+    if [ "${APPLY}" = true ]; then
+        info "Performing control-plane upgrade"
+        kubeadm_upgrade_apply
+    else
+        info "Performing node upgrade"
+        kubeadm_upgrade_node
+    fi
+    install_kubelet
+    install_kubectl
+    info "Kubernetes components upgraded to version ${KUBERNETES_VERSION}"
+}
+
 do_reset() {
     info "Cleaning up"
-    remove_kube
+    remove_kube_binaries
     remove_containerd
-    remove_binaries
+    remove_other_binaries
     clean_iptables
     if [ "${REBOOT}" = true ]; then
         reboot_machine
@@ -383,10 +431,11 @@ setup_arch
 setup_env
 
 case ${COMMAND} in
-    init)  do_kube_init && info "init completed successfully" ;;
-    join)  do_kube_join && info "join completed successfully" ;;
-    reset) do_reset && info "reset completed successfully" ;;
-    help)  helper ;;
-    *)     helper && fatal "use command: init|join|reset|help" ;;
+    init)    do_kube_init && info "init completed successfully" ;;
+    join)    do_kube_join && info "join completed successfully" ;;
+    upgrade) do_kube_upgrade && info "upgrade completed successfully" ;;
+    reset)   do_reset && info "reset completed successfully" ;;
+    help)    helper ;;
+    *)       helper && fatal "use command: init|join|reset|help" ;;
 esac
 
