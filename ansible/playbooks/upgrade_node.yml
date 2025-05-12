@@ -1,0 +1,6 @@
+---
+- name: Upgrade Cluster Nodes # use only after upgrade_plan
+  hosts: all
+  serial: 1
+  roles:
+   - role: upgrade_node

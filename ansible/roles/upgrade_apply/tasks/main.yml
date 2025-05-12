@@ -1,0 +1,29 @@
+- name: Check if nodes are registered with FQDN or hostname
+  set_fact:
+    node_name: "{{ (ansible_fqdn if node_fqdn else ansible_hostname) | lower }}"
+
+- name: Drain seed node
+  shell: kubectl drain {{ node_name }} --ignore-daemonsets --delete-emptydir-data --force
+  delegate_to: localhost
+  become: false
+  environment:
+    KUBECONFIG: "{{ ansible_env.HOME }}/.kube/config" 
+  when: seed is defined and seed | bool
+
+- name: Apply upgrade plan on seed node
+  become: true
+  shell: |
+    curl -sfL https://goyaki.clastix.io | bash -s upgrade
+  environment:
+    DEBUG: "false"
+    KUBERNETES_VERSION: "{{ kubernetes_version }}"
+    APPLY: "true"
+  when: seed is defined and seed | bool
+
+- name: Uncordon seed node
+  shell: kubectl uncordon {{ node_name }}
+  delegate_to: localhost
+  become: false
+  environment:
+    KUBECONFIG: "{{ ansible_env.HOME }}/.kube/config"
+  when: seed is defined and seed | bool
