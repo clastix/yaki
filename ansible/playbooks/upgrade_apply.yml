@@ -1,0 +1,6 @@
+---
+- name: Apply the cluster Upgrade Plan
+  hosts: control_plane
+  serial: 1
+  roles:
+   - role: upgrade_apply

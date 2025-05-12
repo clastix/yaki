@@ -1,0 +1,3 @@
+---
+- import_playbook: upgrade_apply.yml
+- import_playbook: upgrade_node.yml
