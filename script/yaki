@@ -316,7 +316,7 @@ join_node() {
     # If the node is joining as control plane, add control plane specific arguments
     if [ "${JOIN_ASCP}" = true ]; then
         [ -z "${JOIN_TOKEN_CERT_KEY}" ] && fatal "JOIN_TOKEN_CERT_KEY is not set for control plane join"
-        KUBEADM_ARGS="${KUBEADM_ARGS} --control-plane --certificate-key ${JOIN_TOKEN_CERT_KEY}"
+        KUBEADM_ARGS="${KUBEADM_ARGS} --control-plane --certificate-key ${JOIN_TOKEN_CERT_KEY} --apiserver-bind-port ${BIND_PORT}"
     fi
 
     # If KUBEADM_CONFIG is provided, use it
