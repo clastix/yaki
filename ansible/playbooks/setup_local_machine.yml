@@ -4,5 +4,6 @@
   become: true
   become_method: sudo
   become_user: root
+  environment: "{{ proxy_env if use_https_proxy | default(false) else {} }}"
   roles:
     - role: local_machine

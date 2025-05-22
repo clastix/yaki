@@ -2,6 +2,7 @@
 - name: Join Worker Node 
   hosts: worker
   become: true
+  environment: "{{ proxy_env if use_https_proxy | default(false) else {} }}"
   become_method: sudo
   become_user: root
   roles:

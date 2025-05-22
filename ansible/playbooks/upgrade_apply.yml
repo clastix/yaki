@@ -2,5 +2,6 @@
 - name: Apply the cluster Upgrade Plan
   hosts: control_plane
   serial: 1
+  environment: "{{ proxy_env if use_https_proxy | default(false) else {} }}"
   roles:
    - role: upgrade_apply
