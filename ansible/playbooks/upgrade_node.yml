@@ -2,5 +2,6 @@
 - name: Upgrade Cluster Nodes # use only after upgrade_plan
   hosts: all
   serial: 1
+  environment: "{{ proxy_env if use_https_proxy | default(false) else {} }}"
   roles:
    - role: upgrade_node
