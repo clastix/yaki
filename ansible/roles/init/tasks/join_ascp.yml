@@ -54,4 +54,5 @@
     JOIN_TOKEN: "{{ join_token }}"
     JOIN_TOKEN_CACERT_HASH: "{{ join_token_cacert_hash }}"
     JOIN_TOKEN_CERT_KEY: "{{ join_token_cert_key }}"
+    BIND_PORT: "{{ control_plane_port }}"
 
