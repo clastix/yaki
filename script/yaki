@@ -438,5 +438,5 @@ case ${COMMAND} in
     upgrade) do_kube_upgrade && info "upgrade completed successfully" ;;
     reset)   do_reset && info "reset completed successfully" ;;
     help)    helper ;;
-    *)       helper && fatal "use command: init|join|reset|update|help" ;;
+    *)       helper && fatal "use command: init|join|reset|upgrade|help" ;;
 esac
