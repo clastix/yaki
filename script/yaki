@@ -16,10 +16,12 @@ COMMAND=$1
 
 # Define global compatibility matrix
 declare -A versions=(
-    ["containerd"]="v1.7.24"
-    ["runc"]="v1.2.6"
-    ["cni"]="v1.6.2"
-    ["crictl"]="v1.32.0"
+    ["containerd"]="v2.3.2"
+    ["runc"]="v1.4.3"
+    ["cni"]="v1.9.1"
+    ["crictl"]="v1.36.0"
+    ["kubernetes"]="v1.36.1"
+    ["krel"]="v0.16.2"
 )
 
 # Helper function to display usage information
@@ -79,10 +81,10 @@ Environment variables:
   +-------------------------+-------------------------------------------------------------+------------+
   | Variable                | Description                                                 | Default    |
   +-------------------------+-------------------------------------------------------------+------------+
-  | KUBERNETES_VERSION      | Version of kubernetes to install.                           | v1.32.3    |
-  | CONTAINERD_VERSION      | Version of container runtime containerd.                    | v1.7.24    |
-  | RUNC_VERSION            | Version of runc to install.                                 | v1.2.6     |
-  | CNI_VERSION             | Version of CNI plugins to install.                          | v1.6.2     |
+  | KUBERNETES_VERSION      | Version of kubernetes to install.                           | v1.36.1    |
+  | CONTAINERD_VERSION      | Version of container runtime containerd.                    | v2.3.2     |
+  | RUNC_VERSION            | Version of runc to install.                                 | v1.4.3     |
+  | CNI_VERSION             | Version of CNI plugins to install.                          | v1.9.1     |
   | CRICTL_VERSION          | Version of crictl to install.                               | see matrix |
   | KUBEADM_CONFIG          | Path to the kubeadm config file to use.                     | Not set    |
   | ADVERTISE_ADDRESS       | Address to advertise for the api-server.                    | 0.0.0.0    |
@@ -125,7 +127,8 @@ setup_env() {
     # Check if running as root
     [ "$(id -u)" -eq 0 ] || fatal "You need to be root to perform this install"
     # Set default values
-    KUBERNETES_VERSION=${KUBERNETES_VERSION:-v1.32.3}
+    KUBERNETES_VERSION=${KUBERNETES_VERSION:-$(get_version "kubernetes")}
+    RELEASE_VERSION=${RELEASE_VERSION:-$(get_version "krel")}
     JOIN_ASCP=${JOIN_ASCP:-false}
     CONTAINERD_VERSION=${CONTAINERD_VERSION:-$(get_version "containerd")}
     RUNC_VERSION=${RUNC_VERSION:-$(get_version "runc")}
@@ -241,7 +244,6 @@ install_kubeadm() {
 }
 
 install_kubelet() {
-  local RELEASE_VERSION="v0.16.2"
   info "installing kubelet"
   wget -q --progress=bar https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubelet
   chmod +x kubelet
@@ -249,7 +251,7 @@ install_kubelet() {
 
   wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /usr/lib/systemd/system/kubelet.service
   chmod 600 /usr/lib/systemd/system/kubelet.service
-  
+
   mkdir -p /usr/lib/systemd/system/kubelet.service.d
   wget -qO- --progress=bar "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${BIN_DIR}:g" | tee /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
 
@@ -268,7 +270,7 @@ init_cluster() {
     # Setting JOIN_URL:
     # If JOIN_URL is not already set, it is assigned the first IP address of the host followed by port 6443
     : ${JOIN_URL:=$(hostname -I | awk '{print $1}'):6443}
-    
+
     # Ensuring Required Parameters:
     # Checks if both JOIN_URL and KUBEADM_CONFIG are unset. If so, it calls fatal to terminate.
     [ -z "${JOIN_URL}" ] && [ -z "${KUBEADM_CONFIG}" ] && fatal "Either JOIN_URL or KUBEADM_CONFIG must be set"
@@ -286,7 +288,7 @@ init_cluster() {
     kubeadm init ${KUBEADM_ARGS} ${KUBEADM_VERBOSE}
 
     # Possible Cases
-    
+
     # Case 1: KUBEADM_CONFIG is set:
     # The function uses the configuration file specified by KUBEADM_CONFIG to initialize the cluster.
 
@@ -436,6 +438,5 @@ case ${COMMAND} in
     upgrade) do_kube_upgrade && info "upgrade completed successfully" ;;
     reset)   do_reset && info "reset completed successfully" ;;
     help)    helper ;;
-    *)       helper && fatal "use command: init|join|reset|help" ;;
+    *)       helper && fatal "use command: init|join|reset|update|help" ;;
 esac
-
