@@ -36,7 +36,7 @@ First, prepare the bootstrap workspace directory:
 
 ```bash
 git clone https://github.com/clastix/yaki
-cd guides
+cd yaki/guides
 ```
 
 ### Install kubectl
@@ -45,7 +45,7 @@ For the administration of the kubernetes cluster, install the `kubectl` utility 
 Install `kubectl` on Linux
 
 ```bash
-KUBECTL_VER=v1.30.5
+KUBECTL_VER=v1.36.2
 KUBECTL_URL=https://dl.k8s.io/release
 curl -LO ${KUBECTL_URL}/${KUBECTL_VER}/bin/linux/amd64/kubectl
 sudo mv kubectl /usr/local/bin/kubectl
@@ -56,7 +56,7 @@ sudo chmod +x /usr/local/bin/kubectl
 Install `kubectl` on OSX
 
 ```bash
-KUBECTL_VER=v1.30.5
+KUBECTL_VER=v1.36.2
 KUBECTL_URL=https://dl.k8s.io/release
 curl -LO ${KUBECTL_URL}/${KUBECTL_VER}/bin/darwin/amd64/kubectl
 sudo mv kubectl /usr/local/bin/kubectl
@@ -70,20 +70,20 @@ For the administration of the `etcd` cluster, install the `etcdctl` utility on t
 Install `etcdctl` on Linux:
 
 ```bash
-ETCD_VER=v3.5.6
+ETCD_VER=v3.5.13
 ETCD_URL=https://storage.googleapis.com/etcd
 curl -LO ${ETCD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz
-tar xzvf etcd-${ETCD_VER}-linux-amd64.tar.gz -d /tmp
+tar xzvf etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp
 sudo cp /tmp/etcd-${ETCD_VER}-linux-amd64/etcdctl /usr/local/bin/etcdctl
 ```
 
 Install `etcdctl` on OSX
 
 ```bash
-ETCD_VER=v3.5.6
+ETCD_VER=v3.5.13
 ETCD_URL=https://storage.googleapis.com/etcd
 curl -LO ${ETCD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-darwin-amd64.zip
-unzip etcd-${ETCD_VER}-darwin-amd64.zip -d /tmp
+unzip etcd-${ETCD_VER}-darwin-amd64.zip -C /tmp
 sudo cp /tmp/etcd-${ETCD_VER}-darwin-amd64/etcdctl /usr/local/bin/etcdctl
 ```
 
@@ -93,7 +93,7 @@ For the administration of the additional components on the kubernetes cluster, d
 Install `helm` on Linux
 
 ```bash
-HELM_VER=v3.15.2
+HELM_VER=v4.2.2
 HELM_URL=https://get.helm.sh
 curl -LO ${HELM_URL}/helm-${HELM_VER}-linux-amd64.tar.gz
 tar xzvf helm-${HELM_VER}-linux-amd64.tar.gz -C /tmp
@@ -103,7 +103,7 @@ sudo cp /tmp/linux-amd64/helm /usr/local/bin/helm
 Install `helm` on OSX
 
 ```bash
-HELM_VER=v3.15.2
+HELM_VER=v4.2.2
 HELM_URL=https://get.helm.sh
 curl -LO ${HELM_URL}/helm-${HELM_VER}-darwin-amd64.tar.gz
 tar xzvf helm-${HELM_VER}-darwin-amd64.tar.gz -C /tmp
@@ -118,14 +118,14 @@ source setup.env
 ```
 
 ### Ensure host access
-The installer requires a user that has access to all hosts. In order to run the installer as a non-root user, first configure passwordless sudo rights each host:
+The installer requires a user that has access to all hosts. In order to run the installer as a non-root user, first configure passwordless sudo rights each host.
 
-Generate an SSH key on the host you run the installer on:
+After that, generate an SSH key on the host you run the installer on:
 
 ```bash
 ssh-keygen -t rsa
 ```
-> Do not use a password.
+> Do not use a key passphrase.
 
 Distribute the key to the other cluster hosts.
 
@@ -170,7 +170,7 @@ sr0      11:0    1    4M  0 rom
 
 Create partition, format, and mount the `etcd` disk, by running the script below from the bootstrap machine:
 
-> If you already used the `etcd` disk on your machines, please make sure to wipe the partitions with `sudo wipefs --all --force /dev/sdb` before to attempt to recreate them.
+> If you already used the `etcd` disk on your machines, please make sure to unmount the `etcd` directory from the disk with `sudo umount /var/lib/etcd` and to wipe the partitions with `sudo wipefs --all --force /dev/sdb` before to attempt to recreate them.
 
 ```bash
 for i in "${!ETCDHOSTS[@]}"; do
@@ -203,7 +203,7 @@ sr0      11:0    1    4M  0 rom
 
 Create partition, format, and mount the `localpath` disk, by running the script below from the bootstrap machine:
 
-> If you already used the `localpath` disk on your machines, please make sure to wipe the partitions with `sudo wipefs --all --force /dev/sdb` before to attempt to recreate them.
+> If you already used the `localpath` disk on your machines, please make sure to unmount the `etcd` directory from the disk with `sudo umount /var/lib/etcd` and to wipe the partitions with `sudo wipefs --all --force /dev/sdb` before to attempt to recreate them.
 
 ```bash
 for i in "${!WORKERS[@]}"; do
@@ -352,7 +352,7 @@ networking:
   serviceSubnet: ${SVC_CIDR}
 dns:
   imageRepository: registry.k8s.io/coredns
-  imageTag: v1.9.3
+  imageTag: ${COREDNS_VERSION} # Please make sure that this version is compliant with your cluster setup (see setup.env file in the repo)
 controlPlaneEndpoint: "${MASTER_VIP}:${MASTER_PORT}"
 kubernetesVersion: "${CLUSTER_VERSION}"
 etcd:
