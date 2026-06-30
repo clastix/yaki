@@ -20,7 +20,7 @@ declare -A versions=(
     ["runc"]="v1.4.3"
     ["cni"]="v1.9.1"
     ["crictl"]="v1.36.0"
-    ["kubernetes"]="v1.36.1"
+    ["kubernetes"]="v1.36.2"
     ["krel"]="v0.16.2"
 )
 
@@ -81,7 +81,7 @@ Environment variables:
   +-------------------------+-------------------------------------------------------------+------------+
   | Variable                | Description                                                 | Default    |
   +-------------------------+-------------------------------------------------------------+------------+
-  | KUBERNETES_VERSION      | Version of kubernetes to install.                           | v1.36.1    |
+  | KUBERNETES_VERSION      | Version of kubernetes to install.                           | v1.36.2    |
   | CONTAINERD_VERSION      | Version of container runtime containerd.                    | v2.3.2     |
   | RUNC_VERSION            | Version of runc to install.                                 | v1.4.3     |
   | CNI_VERSION             | Version of CNI plugins to install.                          | v1.9.1     |
