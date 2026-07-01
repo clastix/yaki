@@ -2,8 +2,8 @@
 # local machine
 ansible_user: clastix
 arch: amd64
-helm_version: v3.15.2
-flux_version: v2.4.0
+helm_version: v4.2.2
+flux_version: v2.9.0
 
 # http(s) proxy settings
 use_http_proxy: false
@@ -16,15 +16,15 @@ proxy_env:
   no_proxy: "{{ no_proxy }}"
 
 # etcd
-etcd_version: v3.5.16
+etcd_version: v3.6.3
 etcd_cert_dir: /etc/kubernetes/pki/etcd
 etcd_data_dir: /var/lib/etcd/data
 etcd_client_port: 2379
 etcd_peer_port: 2380
-etcd_metrics_port: 2381   
+etcd_metrics_port: 2381
 
 # kubernetes
-kubernetes_version: v1.32.4
+kubernetes_version: v1.36.2
 kubernetes_cert_dir: /etc/kubernetes/pki
 cluster_name: kamaji
 cluster_name_aliases: [] # List of aliases for the cluster name
@@ -39,15 +39,15 @@ control_plane_port: 6443
 control_plane_lb: false # Set to true if you want to use an embedded load balancer for the control plane
 control_plane_lb_port: 8443 # The port on which the internal control plane load balancer listens
 control_plane_interface: eth0
-coredns_version: v1.11.3
+coredns_version: v1.14.2
 calico_version: v3.29.1
-clusterctl_version: v1.9.5
+clusterctl_version: v1.13.3
 
 # container runtime
-containerd_version: v1.7.24
-runc_version: v1.2.6
-cni_version: v1.6.2
-crictl_version: v1.32.0
+containerd_version: v2.3.2
+runc_version: v1.4.3
+cni_version: v1.9.1
+crictl_version: v1.36.0
 bin_dir: /usr/local/bin
 sbin_dir: /usr/local/sbin
 
