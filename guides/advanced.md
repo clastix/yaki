@@ -586,6 +586,68 @@ cgroupDriver: systemd  # tells kubelet about cgroup driver to use (required by c
 EOF
 ```
 
+or for `v1beta4` API:
+
+```
+cat > kubeadm-config.yaml <<EOF
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token:
+  ttl: 48h0m0s
+  usages:
+  - signing
+  - authentication
+localAPIEndpoint:
+  advertiseAddress: "0.0.0.0"
+  bindPort: ${MASTER_PORT}
+nodeRegistration:
+  criSocket: unix:///run/containerd/containerd.sock
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+clusterName: ${CLUSTER_NAME}
+certificatesDir: /etc/kubernetes/pki
+imageRepository: registry.k8s.io
+networking:
+  dnsDomain: cluster.local
+  podSubnet: ${POD_CIDR}
+  serviceSubnet: ${SVC_CIDR}
+dns:
+  imageRepository: registry.k8s.io/coredns
+  imageTag: ${COREDNS_VERSION} # Please make sure that this version is compliant with your cluster setup (see setup.env file in the repo)
+controlPlaneEndpoint: "${MASTER_VIP}:${MASTER_PORT}"
+kubernetesVersion: "${CLUSTER_VERSION}"
+etcd:
+  local:
+    dataDir: /var/lib/etcd/data
+apiServer:
+  certSANs:
+  - localhost
+  - ${MASTER_VIP}
+  - ${CLUSTER_NAME}.${CLUSTER_DOMAIN}
+scheduler:
+  extraArgs:
+    - name: bind-address
+      value: "0.0.0.0" # required to expose metrics
+controllerManager:
+  extraArgs:
+    - name: bind-address
+      value: "0.0.0.0" # required to expose metrics
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+metricsBindAddress: "0.0.0.0" # required to expose metrics
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: systemd # tells kubelet about cgroup driver to use (required by containerd)
+EOF
+```
+
+
 and copy it to the seed machine:
 
 ```bash
